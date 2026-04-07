@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Запись на приём</title>
+<script src="//api.bitrix24.com/api/v1/"></script>
+<style>
+:root {
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --primary-light: #ede9fe;
+  --primary-bg: #f5f3ff;
+  --bg: #faf5ff;
+  --card: #ffffff;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --error: #dc2626;
+  --error-bg: #fef2f2;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 16px;
+  min-height: 100vh;
+}
+
+#app { max-width: 720px; margin: 0 auto; }
+
+/* === LOADING / ERROR / SUCCESS SCREENS === */
+.screen-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-icon { font-size: 48px; }
+.success-icon { font-size: 56px; color: var(--success); }
+
+/* === CLIENT INFO HEADER === */
+.client-header {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.client-avatar {
+  width: 44px; height: 44px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.client-details { flex: 1; }
+.client-name { font-weight: 600; font-size: 15px; }
+.client-meta { color: var(--text-secondary); font-size: 13px; }
+.branch-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* === STEPS INDICATOR === */
+.steps-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 20px;
+  padding: 0 20px;
+}
+.step-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--border-light);
+  color: var(--text-muted);
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+.step-dot.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 0 0 4px var(--primary-light);
+}
+.step-dot.done {
+  background: var(--success);
+  color: white;
+}
+.step-line {
+  height: 2px;
+  width: 40px;
+  background: var(--border-light);
+  transition: background 0.3s;
+}
+.step-line.done { background: var(--success); }
+
+/* === CARD === */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* === STEP HEADER === */
+.step-header {
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.step-header .back-btn {
+  width: 32px; height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+.step-header .back-btn:hover { background: var(--border-light); }
+.step-title { font-size: 17px; font-weight: 600; }
+.step-subtitle { color: var(--text-secondary); font-size: 13px; margin-left: auto; }
+
+/* === SEARCH === */
+.search-wrap {
+  padding: 0 20px 12px;
+}
+.search-input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  outline: none;
+  background: var(--border-light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") 12px center no-repeat;
+  transition: border-color 0.2s;
+}
+.search-input:focus {
+  border-color: var(--primary);
+  background-color: white;
+}
+
+/* === SERVICE LIST === */
+.service-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+.category-group { border-top: 1px solid var(--border-light); }
+.category-title {
+  padding: 8px 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  background: var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.service-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.15s;
+}
+.service-item:hover { background: var(--primary-bg); }
+.service-item:last-child { border-bottom: none; }
+.service-name { font-weight: 500; }
+.service-price {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+.service-duration {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* === STAFF GRID === */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+.staff-card {
+  padding: 16px;
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+.staff-card:hover {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+.staff-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0 auto 8px;
+}
+.staff-name { font-weight: 500; font-size: 14px; }
+.staff-spec { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* === CALENDAR === */
+.calendar-section { padding: 0 20px 8px; }
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.calendar-nav button {
+  width: 32px; height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: background 0.2s;
+}
+.calendar-nav button:hover { background: var(--border-light); }
+.calendar-month { font-weight: 600; font-size: 15px; }
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+.calendar-weekday {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 0;
+  text-transform: uppercase;
+}
+.calendar-day {
+  width: 100%; aspect-ratio: 1;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  cursor: default;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.calendar-day.available {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 500;
+}
+.calendar-day.available:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.calendar-day.selected {
+  background: var(--primary) !important;
+  color: white !important;
+  font-weight: 600;
+}
+.calendar-day.today {
+  border: 2px solid var(--primary);
+}
+
+/* === TIME SLOTS === */
+.slots-section { padding: 12px 20px 20px; }
+.slots-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+.slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.slot-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+.slot-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+.slot-btn.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* === CONFIRM === */
+.confirm-section { padding: 20px; }
+.confirm-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+.confirm-row:last-of-type { border-bottom: none; }
+.confirm-label { color: var(--text-secondary); }
+.confirm-value { font-weight: 500; text-align: right; }
+
+/* === BUTTONS === */
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 16px;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-primary:disabled {
+  background: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.btn-outline {
+  padding: 10px 20px;
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-outline:hover {
+  background: var(--primary-bg);
+}
+
+/* === INLINE LOADING === */
+.loading-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 10px;
+  color: var(--text-secondary);
+}
+.loading-inline .spinner { width: 24px; height: 24px; }
+
+/* === EMPTY STATE === */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+/* === SCROLLBAR === */
+.service-list::-webkit-scrollbar { width: 6px; }
+.service-list::-webkit-scrollbar-track { background: transparent; }
+.service-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* === SUCCESS CARD === */
+.success-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 32px 24px;
+  text-align: center;
+}
+.success-card h3 {
+  font-size: 18px;
+  margin: 12px 0 4px;
+  color: var(--success);
+}
+.success-details {
+  background: var(--success-bg);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin: 16px 0;
+  text-align: left;
+}
+.success-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 14px;
+}
+.success-row .label { color: var(--text-secondary); }
+.success-row .value { font-weight: 500; }
+
+/* === ERROR BANNER === */
+.error-banner {
+  background: var(--error-bg);
+  color: var(--error);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  margin: 12px 20px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// =============================================
+// BEAUTY CLINIC — BOOKING WIDGET v1.0
+// Виджет записи на приём в карточке сделки Б24
+// =============================================
+
+// === CONFIG ===
+var PROXY_URL = 'https://markins.app.n8n.cloud/webhook/beauty-clinic';
+var COMPANY_MAP = { '0': '671663', '3': '816356' }; // CATEGORY_ID → YC company_id
+var BRANCH_NAMES = { '0': 'Махачкала', '3': 'Грозный' };
+var MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+var WEEKDAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+// === STATE ===
+var state = {
+  step: 0, // 0=loading, 1=service, 2=staff, 3=datetime, 4=confirm, 5=success, -1=error
+  dealId: null,
+  contactId: null,
+  categoryId: null,
+  companyId: null,
+  branchName: '',
+  clientName: '',
+  clientPhone: '',
+  services: [],
+  searchQuery: '',
+  selectedService: null,
+  staff: [],
+  selectedStaff: null,
+  availableDates: [],
+  calendarDate: new Date(),
+  selectedDate: null,
+  timeSlots: [],
+  selectedTime: null,
+  loading: false,
+  errorMsg: '',
+  recordId: null,
+  recordUrl: ''
+};
+
+// === BX24 HELPERS ===
+function bx24Call(method, params) {
+  return new Promise(function(resolve, reject) {
+    BX24.callMethod(method, params || {}, function(result) {
+      if (result.error()) {
+        reject(new Error(result.error().ex.error_description || result.error().ex.error || 'BX24 error'));
+      } else {
+        resolve(result.data());
+      }
+    });
+  });
+}
+
+function bx24PlacementInfo() {
+  return new Promise(function(resolve) {
+    var info = BX24.placement.info();
+    resolve(info);
+  });
+}
+
+// === API HELPER ===
+function ycRequest(method, params) {
+  return fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'yclients',
+      method: method,
+      params: params || {}
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.status === 'error') throw new Error(data.error || 'API error');
+    return data;
+  });
+}
+
+// === FORMAT HELPERS ===
+function getInitials(name) {
+  var parts = (name || '').trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return (parts[0] || '?')[0].toUpperCase();
+}
+
+function formatPrice(service) {
+  var min = service.price_min || service.price || 0;
+  var max = service.price_max || min;
+  if (min === max) return min.toLocaleString('ru-RU') + ' \u20BD';
+  return min.toLocaleString('ru-RU') + ' \u2013 ' + max.toLocaleString('ru-RU') + ' \u20BD';
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return '';
+  var h = Math.floor(seconds / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  if (h > 0 && m > 0) return h + ' ч ' + m + ' мин';
+  if (h > 0) return h + ' ч';
+  return m + ' мин';
+}
+
+function formatDateRu(dateStr) {
+  var d = new Date(dateStr);
+  var day = d.getDate();
+  var monthNames = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return day + ' ' + monthNames[d.getMonth()];
+}
+
+function formatWeekday(dateStr) {
+  var days = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  return days[new Date(dateStr).getDay()];
+}
+
+function padZero(n) { return n < 10 ? '0' + n : '' + n; }
+
+function dateToStr(d) {
+  return d.getFullYear() + '-' + padZero(d.getMonth() + 1) + '-' + padZero(d.getDate());
+}
+
+// === INIT ===
+function init() {
+  render();
+  checkPlacementAndLoad();
+}
+
+async function checkPlacementAndLoad() {
+  try {
+    var placement = await bx24PlacementInfo();
+    var placementCode = placement.placement || '';
+    var dealId = placement.options && placement.options.ID;
+
+    // If opened from left menu (no deal context) — show instructions
+    if (!dealId) {
+      showNotInDealMessage();
+      return;
+    }
+
+    // Normal flow — load deal data
+    state.dealId = dealId;
+    await loadDealData();
+  } catch (err) {
+    // Likely opened outside deal card
+    showNotInDealMessage();
+  }
+}
+
+function showNotInDealMessage() {
+  var app = document.getElementById('app');
+  app.innerHTML = '<div class="screen-center">'
+    + '<div style="font-size:48px">\u2139\uFE0F</div>'
+    + '<div style="font-weight:600;font-size:16px">Виджет записи на приём</div>'
+    + '<div style="color:var(--text-secondary);max-width:400px">Откройте карточку сделки и перейдите на вкладку<br><b>«Запись на приём»</b></div>'
+    + '</div>';
+}
+
+async function loadDealData() {
+  try {
+
+    var deal = await bx24Call('crm.deal.get', { id: state.dealId });
+    state.categoryId = String(deal.CATEGORY_ID || '0');
+    state.companyId = COMPANY_MAP[state.categoryId];
+
+    if (!state.companyId) {
+      state.step = -1;
+      state.errorMsg = 'Филиал воронки (CATEGORY_ID=' + state.categoryId + ') не подключен к виджету записи. Обратитесь к интегратору.';
+      render();
+      return;
+    }
+    state.branchName = BRANCH_NAMES[state.categoryId] || 'Филиал';
+
+    var contactId = deal.CONTACT_ID;
+    if (!contactId) {
+      state.step = -1;
+      state.errorMsg = 'К сделке не привязан контакт. Привяжите контакт к сделке и обновите страницу.';
+      render();
+      return;
+    }
+    state.contactId = contactId;
+
+    var contact = await bx24Call('crm.contact.get', { id: contactId });
+    var firstName = contact.NAME || '';
+    var lastName = contact.LAST_NAME || '';
+    state.clientName = (firstName + ' ' + lastName).trim() || 'Без имени';
+    state.clientPhone = (contact.PHONE && contact.PHONE.length > 0) ? contact.PHONE[0].VALUE : '';
+
+    if (!state.clientPhone) {
+      state.step = -1;
+      state.errorMsg = 'У контакта не указан телефон. Добавьте телефон в карточку контакта.';
+      render();
+      return;
+    }
+
+    await loadServices();
+    state.step = 1;
+    render();
+    resizeFrame();
+  } catch (err) {
+    state.step = -1;
+    state.errorMsg = 'Ошибка загрузки данных: ' + err.message;
+    render();
+  }
+}
+
+// === LOAD FUNCTIONS ===
+async function loadServices() {
+  var resp = await ycRequest('services.list', { company_id: state.companyId });
+  var services = resp.data || [];
+  // Filter out services with no price and sort by category
+  state.services = services.filter(function(s) { return s.active !== false; });
+}
+
+async function loadStaff(serviceId) {
+  state.loading = true;
+  state.staff = [];
+  render();
+  try {
+    var resp = await ycRequest('staff.list', {
+      company_id: state.companyId,
+      service_ids: [serviceId]
+    });
+    state.staff = (resp.data || []).filter(function(s) {
+      return !s.hidden && !s.fired;
+    });
+    state.loading = false;
+    render();
+    resizeFrame();
+  } catch (err) {
+    state.loading = false;
+    state.errorMsg = 'Ошибка загрузки врачей: ' + err.message;
+    render();
+  }
+}
+
+async function loadDates(staffId, serviceId) {
+  state.loading = true;
+  state.availableDates = [];
+  state.timeSlots = [];
+  state.selectedDate = null;
+  state.selectedTime = null;
+  render();
+  try {
+    var resp = await ycRequest('book_dates', {
+      company_id: state.companyId,
+      staff_id: staffId,
+      service_ids: [serviceId]
+    });
+    // book_dates returns { booking_dates: [...] } or { data: { booking_dates: [...] } }
+    var dates = [];
+    if (resp.data && resp.data.booking_dates) {
+      dates = resp.data.booking_dates;
+    } else if (resp.booking_dates) {
+      dates = resp.booking_dates;
+    } else if (Array.isArray(resp.data)) {
+      dates = resp.data;
+    }
+    state.availableDates = dates;
+    // Set calendar to first available date's month
+    if (dates.length > 0) {
+      var firstDate = new Date(dates[0]);
+      state.calendarDate = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
+    } else {
+      state.calendarDate = new Date();
+    }
+    state.loading = false;
+    render();
+    resizeFrame();
+  } catch (err) {
+    state.loading = false;
+    state.errorMsg = 'Ошибка загрузки дат: ' + err.message;
+    render();
+  }
+}
+
+async function loadTimeSlots(staffId, date, serviceId) {
+  state.loading = true;
+  state.timeSlots = [];
+  state.selectedTime = null;
+  render();
+  try {
+    var resp = await ycRequest('book_times', {
+      company_id: state.companyId,
+      staff_id: staffId,
+      date: date,
+      service_ids: [serviceId]
+    });
+    var slots = resp.data || [];
+    // Filter only available slots
+    state.timeSlots = Array.isArray(slots) ? slots : [];
+    state.loading = false;
+    render();
+    resizeFrame();
+  } catch (err) {
+    state.loading = false;
+    state.errorMsg = 'Ошибка загрузки слотов: ' + err.message;
+    render();
+  }
+}
+
+// === ACTION HANDLERS ===
+function selectService(service) {
+  state.selectedService = service;
+  state.selectedStaff = null;
+  state.selectedDate = null;
+  state.selectedTime = null;
+  state.errorMsg = '';
+  state.step = 2;
+  render();
+  loadStaff(service.id);
+}
+
+function selectStaff(staffMember) {
+  state.selectedStaff = staffMember;
+  state.selectedDate = null;
+  state.selectedTime = null;
+  state.errorMsg = '';
+  state.step = 3;
+  render();
+  loadDates(staffMember.id, state.selectedService.id);
+}
+
+function selectDate(dateStr) {
+  state.selectedDate = dateStr;
+  state.selectedTime = null;
+  state.errorMsg = '';
+  render();
+  loadTimeSlots(state.selectedStaff.id, dateStr, state.selectedService.id);
+}
+
+function selectTime(slot) {
+  state.selectedTime = slot;
+  state.errorMsg = '';
+  state.step = 4;
+  render();
+  resizeFrame();
+}
+
+function goBack() {
+  state.errorMsg = '';
+  if (state.step === 2) {
+    state.step = 1;
+    state.selectedService = null;
+  } else if (state.step === 3) {
+    state.step = 2;
+    state.selectedStaff = null;
+    state.selectedDate = null;
+    state.selectedTime = null;
+  } else if (state.step === 4) {
+    state.step = 3;
+    state.selectedTime = null;
+  }
+  render();
+  resizeFrame();
+}
+
+async function createBooking() {
+  state.loading = true;
+  state.errorMsg = '';
+  render();
+  try {
+    var seanceLength = state.selectedTime.seance_length || state.selectedService.duration || 3600;
+    var body = {
+      staff_id: state.selectedStaff.id,
+      services: [{ id: state.selectedService.id, amount: 1 }],
+      client: {
+        phone: state.clientPhone,
+        name: state.clientName
+      },
+      datetime: state.selectedTime.datetime,
+      seance_length: seanceLength,
+      save_if_busy: false,
+      send_sms: true,
+      attendance: 0
+    };
+
+    var resp = await ycRequest('records.create', {
+      company_id: state.companyId,
+      body: body
+    });
+
+    // Extract record_id from response: data[0].id
+    var recordData = resp.data;
+    var recordId = null;
+    if (Array.isArray(recordData) && recordData.length > 0) {
+      recordId = recordData[0].id;
+    } else if (recordData && recordData.id) {
+      recordId = recordData.id;
+    }
+
+    if (!recordId) {
+      throw new Error('Не удалось получить ID записи из ответа YCLIENTS');
+    }
+
+    state.recordId = recordId;
+
+    // Save record_id to deal
+    var updateFields = {};
+    updateFields['UF_CRM_ID_RECORD_YCL'] = String(recordId);
+
+    await bx24Call('crm.deal.update', {
+      id: state.dealId,
+      fields: updateFields
+    });
+
+    state.loading = false;
+    state.step = 5;
+    render();
+    resizeFrame();
+  } catch (err) {
+    state.loading = false;
+    state.errorMsg = 'Ошибка создания записи: ' + err.message;
+    render();
+  }
+}
+
+function resizeFrame() {
+  try {
+    var h = document.getElementById('app').scrollHeight + 40;
+    BX24.resizeWindow(720, Math.max(400, Math.min(h, 800)));
+  } catch(e) {}
+}
+
+// === RENDER ===
+function render() {
+  var app = document.getElementById('app');
+  var html = '';
+
+  // Loading screen
+  if (state.step === 0) {
+    html = '<div class="screen-center"><div class="spinner"></div><div>Загрузка данных сделки...</div></div>';
+    app.innerHTML = html;
+    return;
+  }
+
+  // Error screen
+  if (state.step === -1) {
+    html = '<div class="screen-center">'
+      + '<div class="error-icon">\u26A0\uFE0F</div>'
+      + '<div style="font-weight:600;font-size:16px">Ошибка</div>'
+      + '<div style="color:var(--text-secondary);max-width:400px">' + escapeHtml(state.errorMsg) + '</div>'
+      + '</div>';
+    app.innerHTML = html;
+    return;
+  }
+
+  // Success screen
+  if (state.step === 5) {
+    html = renderSuccess();
+    app.innerHTML = html;
+    return;
+  }
+
+  // Main screen: header + steps + content
+  html = renderClientHeader();
+  html += renderStepsBar();
+
+  if (state.errorMsg) {
+    html += '<div class="error-banner">\u26A0 ' + escapeHtml(state.errorMsg) + '</div>';
+  }
+
+  if (state.step === 1) html += renderStepServices();
+  else if (state.step === 2) html += renderStepStaff();
+  else if (state.step === 3) html += renderStepDateTime();
+  else if (state.step === 4) html += renderStepConfirm();
+
+  app.innerHTML = html;
+  attachEventListeners();
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderClientHeader() {
+  return '<div class="client-header">'
+    + '<div class="client-avatar">' + getInitials(state.clientName) + '</div>'
+    + '<div class="client-details">'
+    + '<div class="client-name">' + escapeHtml(state.clientName) + '</div>'
+    + '<div class="client-meta">' + escapeHtml(state.clientPhone) + '</div>'
+    + '</div>'
+    + '<div class="branch-badge">' + escapeHtml(state.branchName) + '</div>'
+    + '</div>';
+}
+
+function renderStepsBar() {
+  var steps = [1,2,3,4];
+  var labels = ['Услуга','Врач','Дата','Запись'];
+  var html = '<div class="steps-bar">';
+  for (var i = 0; i < steps.length; i++) {
+    var cls = 'step-dot';
+    if (state.step === steps[i]) cls += ' active';
+    else if (state.step > steps[i]) cls += ' done';
+    html += '<div class="' + cls + '">' + (state.step > steps[i] ? '\u2713' : (i + 1)) + '</div>';
+    if (i < steps.length - 1) {
+      html += '<div class="step-line' + (state.step > steps[i] ? ' done' : '') + '"></div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+// === STEP 1: SERVICES ===
+function renderStepServices() {
+  var html = '<div class="card">';
+  html += '<div class="step-header"><div class="step-title">Выберите услугу</div>'
+    + '<div class="step-subtitle">' + state.services.length + ' услуг</div></div>';
+  html += '<div class="search-wrap"><input type="text" class="search-input" id="serviceSearch" placeholder="Поиск услуги..." value="' + escapeHtml(state.searchQuery) + '"></div>';
+
+  // Group by category
+  var query = state.searchQuery.toLowerCase();
+  var filtered = state.services.filter(function(s) {
+    if (!query) return true;
+    return (s.title || '').toLowerCase().indexOf(query) >= 0;
+  });
+
+  if (filtered.length === 0) {
+    html += '<div class="empty-state">Услуги не найдены</div>';
+  } else {
+    // Group by category_id
+    var categories = {};
+    var categoryOrder = [];
+    filtered.forEach(function(s) {
+      var catId = s.category_id || 0;
+      var catName = s.category ? (s.category.title || s.category) : 'Без категории';
+      if (typeof catName === 'object') catName = catName.title || 'Без категории';
+      if (!categories[catId]) {
+        categories[catId] = { name: catName, items: [] };
+        categoryOrder.push(catId);
+      }
+      categories[catId].items.push(s);
+    });
+
+    html += '<div class="service-list">';
+    categoryOrder.forEach(function(catId) {
+      var cat = categories[catId];
+      html += '<div class="category-group">';
+      html += '<div class="category-title">' + escapeHtml(cat.name) + '</div>';
+      cat.items.forEach(function(s) {
+        html += '<div class="service-item" data-action="selectService" data-id="' + s.id + '">'
+          + '<div><div class="service-name">' + escapeHtml(s.title) + '</div>'
+          + '<div class="service-duration">' + formatDuration(s.duration) + '</div></div>'
+          + '<div class="service-price">' + formatPrice(s) + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// === STEP 2: STAFF ===
+function renderStepStaff() {
+  var html = '<div class="card">';
+  html += '<div class="step-header">'
+    + '<button class="back-btn" data-action="goBack">\u2190</button>'
+    + '<div class="step-title">Выберите врача</div>'
+    + '<div class="step-subtitle">' + escapeHtml(state.selectedService.title) + '</div>'
+    + '</div>';
+
+  if (state.loading) {
+    html += '<div class="loading-inline"><div class="spinner"></div>Загрузка врачей...</div>';
+  } else if (state.staff.length === 0) {
+    html += '<div class="empty-state">Нет доступных врачей для этой услуги</div>';
+  } else {
+    html += '<div class="staff-grid">';
+    state.staff.forEach(function(s) {
+      html += '<div class="staff-card" data-action="selectStaff" data-id="' + s.id + '">'
+        + '<div class="staff-avatar">' + getInitials(s.name) + '</div>'
+        + '<div class="staff-name">' + escapeHtml(s.name) + '</div>'
+        + (s.specialization ? '<div class="staff-spec">' + escapeHtml(s.specialization) + '</div>' : '')
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// === STEP 3: DATE & TIME ===
+function renderStepDateTime() {
+  var html = '<div class="card">';
+  html += '<div class="step-header">'
+    + '<button class="back-btn" data-action="goBack">\u2190</button>'
+    + '<div class="step-title">Выберите дату и время</div>'
+    + '</div>';
+
+  if (state.loading && state.availableDates.length === 0) {
+    html += '<div class="loading-inline"><div class="spinner"></div>Загрузка расписания...</div>';
+  } else if (state.availableDates.length === 0) {
+    html += '<div class="empty-state">Нет доступных дат для записи</div>';
+  } else {
+    html += renderCalendar();
+    if (state.selectedDate) {
+      html += renderTimeSlots();
+    }
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderCalendar() {
+  var year = state.calendarDate.getFullYear();
+  var month = state.calendarDate.getMonth();
+  var today = dateToStr(new Date());
+
+  var html = '<div class="calendar-section">';
+  html += '<div class="calendar-nav">'
+    + '<button data-action="prevMonth">\u2039</button>'
+    + '<div class="calendar-month">' + MONTHS_RU[month] + ' ' + year + '</div>'
+    + '<button data-action="nextMonth">\u203A</button>'
+    + '</div>';
+
+  html += '<div class="calendar-grid">';
+  WEEKDAYS_RU.forEach(function(d) {
+    html += '<div class="calendar-weekday">' + d + '</div>';
+  });
+
+  // First day of month
+  var firstDay = new Date(year, month, 1);
+  var startWeekday = (firstDay.getDay() + 6) % 7; // Mon=0
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Empty cells before first day
+  for (var i = 0; i < startWeekday; i++) {
+    html += '<div class="calendar-day"></div>';
+  }
+
+  var availSet = {};
+  state.availableDates.forEach(function(d) { availSet[d] = true; });
+
+  for (var d = 1; d <= daysInMonth; d++) {
+    var ds = year + '-' + padZero(month + 1) + '-' + padZero(d);
+    var cls = 'calendar-day';
+    if (availSet[ds]) cls += ' available';
+    if (ds === state.selectedDate) cls += ' selected';
+    if (ds === today) cls += ' today';
+    if (availSet[ds]) {
+      html += '<button class="' + cls + '" data-action="selectDate" data-date="' + ds + '">' + d + '</button>';
+    } else {
+      html += '<div class="' + cls + '">' + d + '</div>';
+    }
+  }
+
+  html += '</div></div>';
+  return html;
+}
+
+function renderTimeSlots() {
+  var html = '<div class="slots-section">';
+  html += '<div class="slots-label">Свободное время на ' + formatDateRu(state.selectedDate) + ', ' + formatWeekday(state.selectedDate) + '</div>';
+
+  if (state.loading) {
+    html += '<div class="loading-inline"><div class="spinner"></div>Загрузка...</div>';
+  } else if (state.timeSlots.length === 0) {
+    html += '<div class="empty-state">Нет свободных слотов на эту дату</div>';
+  } else {
+    html += '<div class="slots-grid">';
+    state.timeSlots.forEach(function(slot) {
+      var time = slot.time || (slot.datetime ? slot.datetime.substring(11, 16) : '');
+      var isSelected = state.selectedTime && state.selectedTime.datetime === slot.datetime;
+      html += '<button class="slot-btn' + (isSelected ? ' selected' : '') + '" data-action="selectTime" data-datetime="' + escapeHtml(slot.datetime) + '">'
+        + time + '</button>';
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// === STEP 4: CONFIRM ===
+function renderStepConfirm() {
+  var time = state.selectedTime.time || state.selectedTime.datetime.substring(11, 16);
+  var html = '<div class="card">';
+  html += '<div class="step-header">'
+    + '<button class="back-btn" data-action="goBack">\u2190</button>'
+    + '<div class="step-title">Подтверждение записи</div>'
+    + '</div>';
+  html += '<div class="confirm-section">'
+    + '<div class="confirm-row"><span class="confirm-label">Клиент</span><span class="confirm-value">' + escapeHtml(state.clientName) + '</span></div>'
+    + '<div class="confirm-row"><span class="confirm-label">Телефон</span><span class="confirm-value">' + escapeHtml(state.clientPhone) + '</span></div>'
+    + '<div class="confirm-row"><span class="confirm-label">Услуга</span><span class="confirm-value">' + escapeHtml(state.selectedService.title) + '</span></div>'
+    + '<div class="confirm-row"><span class="confirm-label">Врач</span><span class="confirm-value">' + escapeHtml(state.selectedStaff.name) + '</span></div>'
+    + '<div class="confirm-row"><span class="confirm-label">Дата</span><span class="confirm-value">' + formatDateRu(state.selectedDate) + ', ' + formatWeekday(state.selectedDate) + '</span></div>'
+    + '<div class="confirm-row"><span class="confirm-label">Время</span><span class="confirm-value">' + time + '</span></div>'
+    + '<div class="confirm-row"><span class="confirm-label">Стоимость</span><span class="confirm-value">' + formatPrice(state.selectedService) + '</span></div>';
+
+  if (state.loading) {
+    html += '<button class="btn-primary" disabled>Создание записи...</button>';
+  } else {
+    html += '<button class="btn-primary" data-action="createBooking">Записать на приём</button>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+// === STEP 5: SUCCESS ===
+function renderSuccess() {
+  var time = state.selectedTime.time || state.selectedTime.datetime.substring(11, 16);
+  return '<div class="success-card">'
+    + '<div style="font-size:56px">\u2705</div>'
+    + '<h3>Запись создана!</h3>'
+    + '<div style="color:var(--text-secondary);margin-bottom:8px">Клиент получит SMS-уведомление</div>'
+    + '<div class="success-details">'
+    + '<div class="success-row"><span class="label">Клиент</span><span class="value">' + escapeHtml(state.clientName) + '</span></div>'
+    + '<div class="success-row"><span class="label">Услуга</span><span class="value">' + escapeHtml(state.selectedService.title) + '</span></div>'
+    + '<div class="success-row"><span class="label">Врач</span><span class="value">' + escapeHtml(state.selectedStaff.name) + '</span></div>'
+    + '<div class="success-row"><span class="label">Дата</span><span class="value">' + formatDateRu(state.selectedDate) + ', ' + formatWeekday(state.selectedDate) + '</span></div>'
+    + '<div class="success-row"><span class="label">Время</span><span class="value">' + time + '</span></div>'
+    + '<div class="success-row"><span class="label">ID записи</span><span class="value">' + state.recordId + '</span></div>'
+    + '</div>'
+    + '<button class="btn-outline" data-action="newBooking">Создать ещё одну запись</button>'
+    + '</div>';
+}
+
+// === EVENT DELEGATION ===
+function attachEventListeners() {
+  // Search input
+  var searchInput = document.getElementById('serviceSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      state.searchQuery = e.target.value;
+      // Re-render just the service list without full re-render
+      render();
+      // Keep focus on search
+      var newInput = document.getElementById('serviceSearch');
+      if (newInput) {
+        newInput.focus();
+        newInput.setSelectionRange(newInput.value.length, newInput.value.length);
+      }
+    });
+  }
+}
+
+document.getElementById('app').addEventListener('click', function(e) {
+  var target = e.target.closest('[data-action]');
+  if (!target) return;
+  var action = target.getAttribute('data-action');
+
+  if (action === 'selectService') {
+    var id = parseInt(target.getAttribute('data-id'));
+    var service = state.services.find(function(s) { return s.id === id; });
+    if (service) selectService(service);
+  }
+  else if (action === 'selectStaff') {
+    var id = parseInt(target.getAttribute('data-id'));
+    var staff = state.staff.find(function(s) { return s.id === id; });
+    if (staff) selectStaff(staff);
+  }
+  else if (action === 'selectDate') {
+    var date = target.getAttribute('data-date');
+    if (date) selectDate(date);
+  }
+  else if (action === 'selectTime') {
+    var dt = target.getAttribute('data-datetime');
+    var slot = state.timeSlots.find(function(s) { return s.datetime === dt; });
+    if (slot) selectTime(slot);
+  }
+  else if (action === 'goBack') {
+    goBack();
+  }
+  else if (action === 'createBooking') {
+    createBooking();
+  }
+  else if (action === 'newBooking') {
+    // Reset state for new booking
+    state.step = 1;
+    state.selectedService = null;
+    state.selectedStaff = null;
+    state.selectedDate = null;
+    state.selectedTime = null;
+    state.searchQuery = '';
+    state.errorMsg = '';
+    state.recordId = null;
+    render();
+    resizeFrame();
+  }
+  else if (action === 'prevMonth') {
+    state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth() - 1, 1);
+    render();
+  }
+  else if (action === 'nextMonth') {
+    state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth() + 1, 1);
+    render();
+  }
+});
+
+// === START ===
+BX24.init(function() {
+  init();
+});
+</script>
+</body>
+</html>
