@@ -195,15 +195,17 @@ body {
   max-height: 380px;
   overflow-y: auto;
 }
-.category-group { border-top: 1px solid var(--border-light); }
+.category-group { border-top: none; }
+.category-group + .category-group { margin-top: 4px; }
 .category-title {
-  padding: 8px 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-  background: var(--border-light);
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-left: 3px solid var(--primary);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -777,8 +779,13 @@ async function loadStaff(serviceId) {
       company_id: state.companyId,
       service_ids: [serviceId]
     });
+    var NON_MEDICAL = /продаж|администратор|управляющ|\bроп\b|менеджер/i;
     state.staff = (resp.data || []).filter(function(s) {
-      return !s.hidden && !s.fired;
+      if (s.hidden || s.fired) return false;
+      var spec = (s.specialization || '').toLowerCase();
+      var name = (s.name || '').toLowerCase();
+      if (NON_MEDICAL.test(spec) || NON_MEDICAL.test(name)) return false;
+      return true;
     });
     state.loading = false;
     render();

@@ -195,15 +195,17 @@ body {
   max-height: 380px;
   overflow-y: auto;
 }
-.category-group { border-top: 1px solid var(--border-light); }
+.category-group { border-top: none; }
+.category-group + .category-group { margin-top: 4px; }
 .category-title {
-  padding: 8px 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-  background: var(--border-light);
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-left: 3px solid var(--primary);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -611,31 +613,105 @@ function init() {
 async function checkPlacementAndLoad() {
   try {
     var placement = await bx24PlacementInfo();
-    var placementCode = placement.placement || '';
-    var dealId = placement.options && placement.options.ID;
+    var dealId = placement.options && (placement.options.ID || placement.options.id);
 
-    // If opened from left menu (no deal context) — show instructions
+    // If opened from left menu (no deal context) — show reinstall UI
     if (!dealId) {
-      showNotInDealMessage();
+      showReinstallScreen();
       return;
     }
 
     // Normal flow — load deal data
-    state.dealId = dealId;
+    state.dealId = String(dealId);
     await loadDealData();
   } catch (err) {
-    // Likely opened outside deal card
-    showNotInDealMessage();
+    state.step = -1;
+    state.errorMsg = 'Ошибка: ' + err.message;
+    render();
   }
 }
 
-function showNotInDealMessage() {
+function showReinstallScreen() {
   var app = document.getElementById('app');
   app.innerHTML = '<div class="screen-center">'
-    + '<div style="font-size:48px">\u2139\uFE0F</div>'
-    + '<div style="font-weight:600;font-size:16px">Виджет записи на приём</div>'
-    + '<div style="color:var(--text-secondary);max-width:400px">Откройте карточку сделки и перейдите на вкладку<br><b>«Запись на приём»</b></div>'
+    + '<div style="font-size:48px">⚙️</div>'
+    + '<div style="font-weight:600;font-size:16px;margin-bottom:8px">Панель управления виджетом</div>'
+    + '<div style="color:var(--text-secondary);max-width:380px;text-align:center;margin-bottom:20px">Если в карточке сделки появились две вкладки «Запись на приём» — нажмите кнопку ниже для исправления.</div>'
+    + '<button onclick="doReinstall()" style="background:var(--primary);color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:15px;cursor:pointer;font-weight:600">Исправить дублирующуюся вкладку</button>'
+    + '<div id="reinstall-status" style="margin-top:16px;color:var(--text-secondary);font-size:14px"></div>'
     + '</div>';
+}
+
+function doReinstall() {
+  var btn = document.querySelector('[onclick="doReinstall()"]');
+  var status = document.getElementById('reinstall-status');
+  if (btn) btn.disabled = true;
+  status.textContent = 'Удаляю старые вкладки...';
+
+  BX24.callMethod('placement.unbind', { PLACEMENT: 'CRM_DEAL_DETAIL_TAB' }, function() {
+    status.textContent = 'Регистрирую одну вкладку...';
+    BX24.callMethod('placement.bind', {
+      PLACEMENT: 'CRM_DEAL_DETAIL_TAB',
+      HANDLER: 'https://widget-five-alpha.vercel.app',
+      LANG_ALL: {
+        ru: { TITLE: 'Запись на приём' },
+        en: { TITLE: 'Book appointment' }
+      }
+    }, function(result) {
+      if (result.error()) {
+        status.textContent = 'Ошибка: ' + (result.error().ex ? result.error().ex.error_description : JSON.stringify(result.error()));
+        if (btn) btn.disabled = false;
+      } else {
+        status.innerHTML = '<span style="color:green;font-weight:600">✓ Готово! Обновите страницу со сделкой — будет одна вкладка.</span>';
+      }
+    });
+  });
+}
+
+function registerPlacementIfNeeded() {
+  var app = document.getElementById('app');
+  app.innerHTML = '<div class="screen-center"><div class="spinner"></div><div>Регистрация вкладки...</div></div>';
+
+  BX24.callMethod('placement.list', {}, function(listResult) {
+    var placements = (listResult.data && listResult.data()) || [];
+    var alreadyRegistered = false;
+    if (Array.isArray(placements)) {
+      alreadyRegistered = placements.some(function(p) { return p.placement === 'CRM_DEAL_DETAIL_TAB'; });
+    }
+
+    if (alreadyRegistered) {
+      app.innerHTML = '<div class="screen-center">'
+        + '<div style="font-size:48px">\u2705</div>'
+        + '<div style="font-weight:600;font-size:16px">Вкладка уже зарегистрирована</div>'
+        + '<div style="color:var(--text-secondary);max-width:400px">Откройте любую сделку — вкладка<br><b>«Запись на приём»</b> уже там.</div>'
+        + '</div>';
+      return;
+    }
+
+    var handlerUrl = window.location.href.split('?')[0].split('#')[0];
+    BX24.callMethod('placement.bind', {
+      PLACEMENT: 'CRM_DEAL_DETAIL_TAB',
+      HANDLER: handlerUrl,
+      LANG_ALL: {
+        ru: { TITLE: 'Запись на приём' },
+        en: { TITLE: 'Book appointment' }
+      }
+    }, function(result) {
+      if (result.error()) {
+        app.innerHTML = '<div class="screen-center">'
+          + '<div style="font-size:48px">\u26A0\uFE0F</div>'
+          + '<div style="font-weight:600;font-size:16px">Ошибка регистрации</div>'
+          + '<div style="color:var(--text-secondary);max-width:400px">' + (result.error().ex ? result.error().ex.error_description : 'Unknown error') + '</div>'
+          + '</div>';
+      } else {
+        app.innerHTML = '<div class="screen-center">'
+          + '<div style="font-size:48px">\u2705</div>'
+          + '<div style="font-weight:600;font-size:16px">Вкладка зарегистрирована!</div>'
+          + '<div style="color:var(--text-secondary);max-width:400px">Откройте любую сделку — во вкладках появится<br><b>«Запись на приём»</b></div>'
+          + '</div>';
+      }
+    });
+  });
 }
 
 async function loadDealData() {
@@ -654,7 +730,7 @@ async function loadDealData() {
     state.branchName = BRANCH_NAMES[state.categoryId] || 'Филиал';
 
     var contactId = deal.CONTACT_ID;
-    if (!contactId) {
+    if (!contactId || parseInt(contactId) <= 0) {
       state.step = -1;
       state.errorMsg = 'К сделке не привязан контакт. Привяжите контакт к сделке и обновите страницу.';
       render();
@@ -703,8 +779,13 @@ async function loadStaff(serviceId) {
       company_id: state.companyId,
       service_ids: [serviceId]
     });
+    var NON_MEDICAL = /продаж|администратор|управляющ|\bроп\b|менеджер/i;
     state.staff = (resp.data || []).filter(function(s) {
-      return !s.hidden && !s.fired;
+      if (s.hidden || s.fired) return false;
+      var spec = (s.specialization || '').toLowerCase();
+      var name = (s.name || '').toLowerCase();
+      if (NON_MEDICAL.test(spec) || NON_MEDICAL.test(name)) return false;
+      return true;
     });
     state.loading = false;
     render();
