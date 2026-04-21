@@ -546,20 +546,47 @@ function bx24PlacementInfo() {
 }
 
 // === API HELPER ===
-function ycRequest(method, params) {
+// Сборка query-string вручную. Нужна чтобы массивы уходили в YC как
+// ?service_ids[]=1&service_ids[]=2 (URLSearchParams склеивает их через запятую).
+function buildQs(obj) {
+  if (!obj) return '';
+  var parts = [];
+  for (var k in obj) {
+    var v = obj[k];
+    if (Array.isArray(v)) {
+      v.forEach(function(x) { parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(x)); });
+    } else if (v !== undefined && v !== null) {
+      parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    }
+  }
+  return parts.length ? '?' + parts.join('&') : '';
+}
+
+// REST-вызов YCLIENTS через BC-прокси (markins-main, Амстердам).
+// path - путь YC API без ведущего слэша, напр. 'company/671663/services'
+// opts.method - 'GET' (по умолчанию) или 'POST'
+// opts.body - тело для POST
+// Возвращает сырой YC-ответ { success, data, meta }.
+function ycRequest(path, opts) {
+  opts = opts || {};
   return fetch(PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'yclients',
-      method: method,
-      params: params || {}
+      path: path,
+      method: opts.method || 'GET',
+      body: opts.body || null
     })
   })
   .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.status === 'error') throw new Error(data.error || 'API error');
-    return data;
+  .then(function(resp) {
+    if (!resp.ok) throw new Error(resp.error || 'Ошибка прокси');
+    var yc = resp.result;
+    if (yc && yc.success === false) {
+      throw new Error((yc.meta && yc.meta.message) || 'Ошибка YCLIENTS');
+    }
+    return yc;
   });
 }
 
@@ -764,7 +791,7 @@ async function loadDealData() {
 
 // === LOAD FUNCTIONS ===
 async function loadServices() {
-  var resp = await ycRequest('services.list', { company_id: state.companyId });
+  var resp = await ycRequest('company/' + state.companyId + '/services');
   var services = resp.data || [];
   // Filter out services with no price and sort by category
   state.services = services.filter(function(s) { return s.active !== false; });
@@ -775,10 +802,10 @@ async function loadStaff(serviceId) {
   state.staff = [];
   render();
   try {
-    var resp = await ycRequest('staff.list', {
-      company_id: state.companyId,
-      service_ids: [serviceId]
-    });
+    var resp = await ycRequest(
+      'company/' + state.companyId + '/staff' +
+      buildQs({ 'service_ids[]': [serviceId] })
+    );
     var NON_MEDICAL = /продаж|администратор|управляющ|\bроп\b|менеджер/i;
     state.staff = (resp.data || []).filter(function(s) {
       if (s.hidden || s.fired) return false;
@@ -805,11 +832,10 @@ async function loadDates(staffId, serviceId) {
   state.selectedTime = null;
   render();
   try {
-    var resp = await ycRequest('book_dates', {
-      company_id: state.companyId,
-      staff_id: staffId,
-      service_ids: [serviceId]
-    });
+    var resp = await ycRequest(
+      'book_dates/' + state.companyId +
+      buildQs({ staff_id: staffId, 'service_ids[]': [serviceId] })
+    );
     // book_dates returns { booking_dates: [...] } or { data: { booking_dates: [...] } }
     var dates = [];
     if (resp.data && resp.data.booking_dates) {
@@ -843,12 +869,10 @@ async function loadTimeSlots(staffId, date, serviceId) {
   state.selectedTime = null;
   render();
   try {
-    var resp = await ycRequest('book_times', {
-      company_id: state.companyId,
-      staff_id: staffId,
-      date: date,
-      service_ids: [serviceId]
-    });
+    var resp = await ycRequest(
+      'book_times/' + state.companyId + '/' + staffId + '/' + date +
+      buildQs({ 'service_ids[]': [serviceId] })
+    );
     var slots = resp.data || [];
     // Filter only available slots
     state.timeSlots = Array.isArray(slots) ? slots : [];
@@ -938,10 +962,7 @@ async function createBooking() {
       attendance: 0
     };
 
-    var resp = await ycRequest('records.create', {
-      company_id: state.companyId,
-      body: body
-    });
+    var resp = await ycRequest('records/' + state.companyId, { method: 'POST', body: body });
 
     // Extract record_id from response: data[0].id
     var recordData = resp.data;
