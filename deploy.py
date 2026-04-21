@@ -1,11 +1,17 @@
 """
-Deploy script for Beauty Clinic booking widget.
-1. Updates Proxy workflow (adds booking methods)
-2. Deploys widget HTML to hosting workflow
+DEPRECATED (21.04.2026): n8n-based deploy retired.
+
+Widget migrated to BC-коннектор (Амстердам VPS, https://78-17-41-141.sslip.io/api/proxy).
+The HTML widget is now deployed to Vercel (auto-deploy on git push from widget/ repo).
+Proxy/backend lives in /root/bc/ on markins-main (see docs/Доступы.md).
+
+Do not run this script. Left in repo for archive only.
 """
+import sys
+sys.exit("deploy.py deprecated - widget runs on BC-коннектор + Vercel. See docs/Доступы.md")
+
 import json
 import urllib.request
-import sys
 import os
 
 N8N_BASE = 'https://markins.app.n8n.cloud/api/v1'
