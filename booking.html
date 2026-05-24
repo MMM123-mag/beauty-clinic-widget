@@ -522,7 +522,8 @@ var state = {
   loading: false,
   errorMsg: '',
   recordId: null,
-  recordUrl: ''
+  recordUrl: '',
+  existingRecord: null  // existing record on this deal: {recordId, visitDate, staff}
 };
 
 // === BX24 HELPERS ===
@@ -770,6 +771,17 @@ async function loadDealData() {
     var lastName = contact.LAST_NAME || '';
     state.clientName = (firstName + ' ' + lastName).trim() || 'Без имени';
     state.clientPhone = (contact.PHONE && contact.PHONE.length > 0) ? contact.PHONE[0].VALUE : '';
+
+    // Existing record on this deal (if any) — show info block before booking wizard
+    var existingRecordId = String(deal.UF_CRM_ID_RECORD_YCL || '').replace(/\D/g, '');
+    if (existingRecordId) {
+      state.existingRecord = {
+        recordId: existingRecordId,
+        visitDate: deal.UF_CRM_VISIT_DATE || '',
+        staff: deal.UF_CRM_MASTER_N_YCL || '',
+        url: deal.UF_CRM_YCL_RECORD_URL || ('https://yclients.com/timetable/' + state.companyId)
+      };
+    }
 
     if (!state.clientPhone) {
       state.step = -1;
@@ -1058,7 +1070,7 @@ function escapeHtml(str) {
 }
 
 function renderClientHeader() {
-  return '<div class="client-header">'
+  var html = '<div class="client-header">'
     + '<div class="client-avatar">' + getInitials(state.clientName) + '</div>'
     + '<div class="client-details">'
     + '<div class="client-name">' + escapeHtml(state.clientName) + '</div>'
@@ -1066,6 +1078,28 @@ function renderClientHeader() {
     + '</div>'
     + '<div class="branch-badge">' + escapeHtml(state.branchName) + '</div>'
     + '</div>';
+
+  if (state.existingRecord) {
+    var er = state.existingRecord;
+    var dt = er.visitDate ? new Date(er.visitDate) : null;
+    var dtText = dt && !isNaN(dt) ? (dt.toLocaleDateString('ru-RU') + ' ' + dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })) : '—';
+    html += '<div style="background: var(--success-bg); border: 1px solid var(--success); border-radius: var(--radius); padding: 14px 18px; margin: 0 0 14px 0;">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      + '<span style="font-size:18px;">✓</span>'
+      + '<span style="font-weight:600;color:var(--success);">Клиент уже записан</span>'
+      + '</div>'
+      + '<div style="color:var(--text);font-size:13px;line-height:1.6;">'
+      + '<b>' + escapeHtml(dtText) + '</b>'
+      + (er.staff ? ' · Врач: ' + escapeHtml(er.staff) : '')
+      + '</div>'
+      + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">'
+      + '<a href="' + escapeHtml(er.url) + '" target="_blank" style="background:var(--primary);color:white;padding:8px 14px;border-radius:var(--radius-sm);text-decoration:none;font-size:13px;font-weight:500;">Открыть в YC (перенос/правка)</a>'
+      + '<span style="color:var(--text-secondary);font-size:12px;align-self:center;">или создай дополнительную запись ниже ↓</span>'
+      + '</div>'
+      + '</div>';
+  }
+
+  return html;
 }
 
 function renderStepsBar() {
