@@ -460,14 +460,50 @@ function renderError(msg) {
     '</div>';
 }
 
+function renderNewLeadHint() {
+  document.getElementById('app').innerHTML =
+    '<div class="header">' +
+    '<div class="header-info">' +
+    '<div class="header-name">Новый лид - ещё не сохранён</div>' +
+    '<div class="header-meta">Для добавления услуг сначала сохрани карточку</div>' +
+    '</div>' +
+    '</div>' +
+    '<div style="background: var(--card); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); text-align: center;">' +
+    '<div style="font-size: 48px; margin-bottom: 12px;">💾</div>' +
+    '<div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">Сохрани лид, чтобы добавить услуги</div>' +
+    '<div style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; max-width: 480px; margin: 0 auto;">' +
+    'Заполни в карточке: <b>имя клиента</b>, <b>телефон</b>, <b>филиал</b> (обязательно).<br/>' +
+    'Нажми кнопку <b>«Сохранить»</b> внизу карточки.<br/>' +
+    'Вернись на эту вкладку - появится поиск услуг.' +
+    '</div>' +
+    '</div>';
+}
+
 BX24.init(function() {
   try {
     var placement = BX24.placement.info();
-    state.leadId = placement && placement.options && placement.options.ID;
+    var rawId = placement && placement.options && placement.options.ID;
+    state.leadId = parseInt(rawId, 10) || 0;
+
     if (!state.leadId) {
-      renderError('Не удалось определить ID лида');
+      renderNewLeadHint();
+      // Polling: каждые 2 сек проверяем что ID появился (после сохранения лида)
+      var pollInterval = setInterval(function() {
+        try {
+          var p = BX24.placement.info();
+          var id = parseInt(p && p.options && p.options.ID, 10) || 0;
+          if (id) {
+            state.leadId = id;
+            clearInterval(pollInterval);
+            loadData()
+              .then(render)
+              .catch(function(e) { renderError(e.message || 'Ошибка загрузки'); });
+          }
+        } catch (e) { /* ignore */ }
+      }, 2000);
       return;
     }
+
     loadData()
       .then(render)
       .catch(function(e) {
