@@ -10,26 +10,49 @@ function setStatus(text) {
   document.getElementById('status').textContent = text;
 }
 
-BX24.init(function() {
-  setStatus('Настройка приложения...');
-
-  BX24.callMethod('placement.unbind', { PLACEMENT: 'CRM_DEAL_DETAIL_TAB' }, function() {
+function bindPlacement(placement, handler, title, callback) {
+  BX24.callMethod('placement.unbind', { PLACEMENT: placement }, function() {
     BX24.callMethod('placement.bind', {
-      PLACEMENT: 'CRM_DEAL_DETAIL_TAB',
-      HANDLER: HANDLER,
+      PLACEMENT: placement,
+      HANDLER: handler,
       LANG_ALL: {
-        ru: { TITLE: 'Запись на приём' },
-        en: { TITLE: 'Book appointment' }
+        ru: { TITLE: title.ru },
+        en: { TITLE: title.en }
       }
-    }, function(resBind) {
-      if (resBind.error()) {
-        var err = resBind.error();
-        setStatus('Ошибка: ' + (err.ex ? err.ex.error_description : JSON.stringify(err)));
+    }, callback);
+  });
+}
+
+BX24.init(function() {
+  setStatus('Настройка приложения... (шаг 1/2)');
+
+  // Placement 1: запись на приём в сделке (существующий)
+  bindPlacement('CRM_DEAL_DETAIL_TAB', HANDLER, {
+    ru: 'Запись на приём',
+    en: 'Book appointment'
+  }, function(resDeal) {
+    if (resDeal.error()) {
+      var err = resDeal.error();
+      setStatus('Ошибка DEAL placement: ' + (err.ex ? err.ex.error_description : JSON.stringify(err)));
+      BX24.installFinish();
+      return;
+    }
+
+    setStatus('Настройка приложения... (шаг 2/2)');
+
+    // Placement 2: интересующие услуги в лиде (новый)
+    bindPlacement('CRM_LEAD_DETAIL_TAB', HANDLER + '/lead', {
+      ru: 'Интересующие услуги',
+      en: 'Services of interest'
+    }, function(resLead) {
+      if (resLead.error()) {
+        var err = resLead.error();
+        setStatus('Ошибка LEAD placement: ' + (err.ex ? err.ex.error_description : JSON.stringify(err)));
         BX24.installFinish();
-      } else {
-        setStatus('Готово! Откройте любую сделку — там появится вкладка "Запись на приём".');
-        BX24.installFinish(); // Критически важно — завершает установку
+        return;
       }
+      setStatus('Готово! В сделке - вкладка "Запись на приём". В лиде - вкладка "Интересующие услуги".');
+      BX24.installFinish();
     });
   });
 });

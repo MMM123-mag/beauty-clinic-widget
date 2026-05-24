@@ -7,6 +7,11 @@
       "methods": ["GET", "POST"]
     },
     {
+      "src": "/lead(/.*)?",
+      "dest": "/api/lead.js",
+      "methods": ["GET", "POST"]
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/index.js",
       "methods": ["GET", "POST"]
