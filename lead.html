@@ -350,13 +350,21 @@ async function loadData() {
     .sort(function(a, b) { return a.title.localeCompare(b.title, 'ru'); });
 
   // 4. Товарные строки лида (уже добавленные услуги)
+  // Б24 silent-ignores XML_ID and PRODUCT_DESCRIPTION in product rows,
+  // so we encode booked status as "✓ " prefix in PRODUCT_NAME.
+  // yc_id resolution is done by matching cleaned name against state.services on next render.
   var rows = await bx24Call('crm.lead.productrows.get', { id: state.leadId });
   state.addedRows = (rows || []).map(function(r) {
+    var name = r.PRODUCT_NAME || '';
+    var booked = name.indexOf('✓ ') === 0;
+    var cleanName = booked ? name.slice(2) : name;
+    // Match yc_id by name from services catalog
+    var svc = state.services.find(function(s) { return s.title === cleanName; });
     return {
       id: r.ID || null,
-      yc_id: parseInt((r.XML_ID || '').replace(/^yc:/, ''), 10) || null,
-      booked: (r.XML_ID || '').indexOf('|booked') > -1,
-      name: r.PRODUCT_NAME,
+      yc_id: svc ? svc.id : null,
+      booked: booked,
+      name: cleanName,
       price: parseFloat(r.PRICE) || 0
     };
   });
@@ -366,10 +374,9 @@ async function loadData() {
 async function saveRows() {
   var rows = state.addedRows.map(function(r) {
     return {
-      PRODUCT_NAME: r.name,
+      PRODUCT_NAME: (r.booked ? '✓ ' : '') + r.name,
       PRICE: r.price,
-      QUANTITY: 1,
-      XML_ID: 'yc:' + r.yc_id + (r.booked ? '|booked' : '')
+      QUANTITY: 1
     };
   });
   await bx24Call('crm.lead.productrows.set', {
