@@ -318,16 +318,14 @@ async function loadData() {
     state.clientPhone = lead.PHONE[0].VALUE || '';
   }
 
-  // 2. Филиал
+  // 2. Филиал — с фолбэком на МХ если не выбран.
+  // Каталог услуг одинаковый в обоих филиалах, поэтому списки идентичны и админ
+  // может выбирать услуги ещё до выбора филиала (заёб сохранять лид ради списка убран).
   var filialVal = lead[FIELD_FILIAL];
   if (Array.isArray(filialVal)) filialVal = filialVal[0];
   filialVal = parseInt(filialVal, 10);
-  state.companyId = FILIAL_TO_COMPANY[filialVal];
-  state.branchName = FILIAL_NAMES[filialVal] || '';
-
-  if (!state.companyId) {
-    throw new Error('Филиал лида не определён. Заполните поле «Филиал» в карточке лида');
-  }
+  state.companyId = FILIAL_TO_COMPANY[filialVal] || 671663;
+  state.branchName = FILIAL_NAMES[filialVal] || 'Махачкала (филиал не выбран)';
 
   // 3. Услуги YC + категории
   var ycServ = await ycRequest('company/' + state.companyId + '/services');
