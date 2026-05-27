@@ -36,7 +36,24 @@ body {
   padding: 16px;
   min-height: 100vh;
 }
-#app { max-width: 720px; margin: 0 auto; }
+#app { max-width: 1400px; margin: 0 auto; }
+
+/* Tooltip — мягкий значок с подсказкой при наведении (заменяет большой баннер). */
+.draft-hint {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; margin-left: 8px;
+  border-radius: 50%; background: #fff8e1; border: 1px solid #ffe082;
+  color: #7a5d00; font-size: 14px; cursor: help;
+  position: relative; vertical-align: middle;
+}
+.draft-hint:hover .draft-hint-text { display: block; }
+.draft-hint-text {
+  display: none; position: absolute; top: 28px; left: 0;
+  background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px;
+  padding: 10px 14px; font-size: 13px; color: #7a5d00;
+  width: 320px; line-height: 1.5; z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: default;
+}
 
 .screen-center {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -406,7 +423,14 @@ function render() {
   // Header
   html += '<div class="header">';
   html += '<div class="header-info">';
-  html += '<div class="header-name">' + escapeHtml(state.clientName) + '</div>';
+  html += '<div class="header-name">' + escapeHtml(state.clientName);
+  // Tooltip-значок только для черновика — подсказка по наведению, не съедает место.
+  if (!state.leadId) {
+    html += ' <span class="draft-hint" title="">💡<span class="draft-hint-text">';
+    html += 'Лид ещё не сохранён. Выбирай услуги — они автоматически перенесутся в карточку сразу как сохранишь лид (имя+телефон+филиал внизу).';
+    html += '</span></span>';
+  }
+  html += '</div>';
   html += '<div class="header-meta">' + escapeHtml(formatPhone(state.clientPhone)) + '</div>';
   html += '</div>';
   if (state.branchName) {
@@ -416,13 +440,6 @@ function render() {
 
   if (state.error) {
     html += '<div class="error-banner">⚠ ' + escapeHtml(state.error) + '</div>';
-  }
-
-  // Подсказка для черновика — услуги в state, привяжутся к лиду после сохранения карточки.
-  if (!state.leadId) {
-    html += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#7a5d00;">';
-    html += '💡 Лид ещё не сохранён. Выбирай услуги — они автоматически перенесутся в карточку сразу как сохранишь лид (имя+телефон+филиал внизу).';
-    html += '</div>';
   }
 
   // Added services (top)
@@ -521,6 +538,7 @@ function render() {
   }
 
   document.getElementById('app').innerHTML = html;
+  autoResize();
 
   // Bind events
   var searchInput = document.getElementById('search-input');
@@ -615,6 +633,16 @@ function renderNewLeadHint() {
     'Вернись на эту вкладку - появится поиск услуг.' +
     '</div>' +
     '</div>';
+}
+
+// Растянуть iframe виджета по высоте окна Б24, чтобы плитки услуг занимали больше места.
+// Вызываем при инициализации и при каждом render() — высота контента меняется (поиск, категории, добавленные).
+function autoResize() {
+  try {
+    if (typeof BX24 === 'undefined' || !BX24.resizeWindow) return;
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 800);
+    BX24.resizeWindow(document.body.scrollWidth, h);
+  } catch (e) { /* ignore */ }
 }
 
 BX24.init(function() {
