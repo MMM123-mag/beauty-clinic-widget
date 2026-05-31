@@ -7,214 +7,43 @@
 <script src="//api.bitrix24.com/api/v1/"></script>
 <style>
 :root {
-  --primary: #7c3aed;
-  --primary-hover: #6d28d9;
-  --primary-light: #ede9fe;
-  --primary-bg: #f5f3ff;
-  --bg: #faf5ff;
-  --card: #ffffff;
-  --text: #1f2937;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --border: #e5e7eb;
-  --border-light: #f3f4f6;
-  --success: #059669;
-  --success-bg: #ecfdf5;
-  --error: #dc2626;
-  --error-bg: #fef2f2;
+  --primary:#7c3aed; --primary-hover:#6d28d9; --primary-light:#ede9fe; --primary-bg:#f5f3ff;
+  --bg:#faf5ff; --card:#fff; --text:#1f2937; --text-secondary:#6b7280; --text-muted:#9ca3af;
+  --border:#e5e7eb; --border-light:#f3f4f6; --success:#059669; --success-bg:#ecfdf5;
+  --error:#dc2626; --error-bg:#fef2f2;
   --svc-accent:#4f46e5; --svc-bg:#eef2ff; --svc-text:#3730a3;
   --sch-accent:#059669; --sch-bg:#ecfdf5; --sch-text:#065f46;
   --busy:#d1fae5; --busy-border:#6ee7b7; --busy-text:#065f46;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --radius:12px; --radius-sm:8px; --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 14px;
-  line-height: 1.5;
-  padding: 16px;
-  min-height: 100vh;
-}
-#app, #booking { max-width: 1400px; margin: 0 auto; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;padding:16px;min-height:100vh}
+#app{max-width:1400px;margin:0 auto}
 
-.draft-hint {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; margin-left: 8px;
-  border-radius: 50%; background: #fff8e1; border: 1px solid #ffe082;
-  color: #7a5d00; font-size: 14px; cursor: help;
-  position: relative; vertical-align: middle;
-}
-.draft-hint:hover .draft-hint-text { display: block; }
-.draft-hint-text {
-  display: none; position: absolute; top: 28px; left: 0;
-  background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px;
-  padding: 10px 14px; font-size: 13px; color: #7a5d00;
-  width: 320px; line-height: 1.5; z-index: 100;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: default;
-}
+.screen-center{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;text-align:center;gap:16px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-.screen-center {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 200px; text-align: center; gap: 16px;
-}
-.spinner {
-  width: 32px; height: 32px;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.error-banner{background:var(--error-bg);color:var(--error);padding:12px 16px;border-radius:var(--radius-sm);margin-bottom:14px;font-size:13px}
+.ok-banner{background:var(--success-bg);color:var(--success);border:1px solid #a7f3d0;padding:14px 16px;border-radius:var(--radius-sm);margin-bottom:14px;font-size:14px;font-weight:600}
 
-.header {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  box-shadow: var(--shadow);
-  margin-bottom: 14px;
-  display: flex; align-items: center; gap: 12px;
-}
-.header-info { flex: 1; }
-.header-name { font-weight: 600; font-size: 15px; }
-.header-meta { color: var(--text-secondary); font-size: 13px; }
-.branch-badge {
-  background: var(--primary-light); color: var(--primary);
-  padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 500;
-}
+/* prompt (лид не сохранён) */
+.prompt{background:var(--card);border-radius:var(--radius);padding:28px 24px;box-shadow:var(--shadow);text-align:center}
+.prompt .ic{font-size:48px;margin-bottom:12px}
+.prompt .t{font-weight:700;font-size:17px;margin-bottom:10px}
+.prompt .d{color:var(--text-secondary);font-size:14px;line-height:1.7;max-width:520px;margin:0 auto;text-align:left}
+.prompt .d b{color:var(--text)}
+.prompt ol{margin:10px 0 0 20px}
 
-.search-box {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 12px;
-  box-shadow: var(--shadow);
-  margin-bottom: 14px;
-}
-.search-input {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  font-size: 14px;
-  outline: none;
-}
-.search-input:focus { border-color: var(--primary); }
-
-.section-title {
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 14px 0 8px;
-  padding: 0 4px;
-}
-
-.service-list {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  margin-bottom: 14px;
-}
-.service-item {
-  display: flex; align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-light);
-  gap: 12px;
-  cursor: pointer;
-  transition: background 0.12s;
-}
-.service-item:hover { background: var(--primary-light); }
-.service-item:hover .btn-add { background: var(--primary); color: white; }
-.service-item:last-child { border-bottom: none; }
-.service-name { flex: 1; font-size: 14px; }
-.service-price { font-weight: 600; color: var(--text); white-space: nowrap; }
-.btn-add {
-  background: var(--primary-light); color: var(--primary);
-  border: none; padding: 6px 12px; border-radius: var(--radius-sm);
-  font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: background 0.15s; pointer-events: none;
-}
-
-.added-item {
-  display: flex; align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-light);
-  gap: 12px;
-}
-.added-item:last-child { border-bottom: none; }
-.added-item.booked { background: var(--success-bg); }
-.booked-toggle {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--text-secondary); cursor: pointer;
-  user-select: none;
-}
-.booked-toggle input { cursor: pointer; }
-.booked-toggle.checked { color: var(--success); font-weight: 600; }
-.btn-remove {
-  background: transparent; color: var(--text-muted); border: none;
-  cursor: pointer; padding: 4px 8px; font-size: 16px;
-}
-.btn-remove:hover { color: var(--error); }
-
-.btn-yc {
-  display: block; width: 100%;
-  background: var(--primary); color: white;
-  border: none; padding: 14px;
-  border-radius: var(--radius);
-  font-size: 15px; font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
-}
-.btn-yc:hover { background: var(--primary-hover); }
-.btn-yc.disabled { background: var(--text-muted); cursor: not-allowed; }
-
-.empty { padding: 24px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
-
-.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
-.cat-tile {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 12px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text);
-  transition: all 0.15s; display: flex; flex-direction: column; gap: 4px;
-}
-.cat-tile:hover { border-color: var(--primary); background: var(--primary-bg); color: var(--primary); }
-.cat-tile-count { font-size: 11px; color: var(--text-muted); font-weight: 400; }
-
-.cat-header {
-  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-  background: var(--primary-bg); border-radius: var(--radius); margin-bottom: 8px;
-}
-.cat-header-back {
-  background: var(--card); color: var(--text); border: 1px solid var(--border);
-  padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px;
-}
-.cat-header-back:hover { background: var(--primary-light); color: var(--primary); }
-.cat-header-name { font-weight: 600; font-size: 14px; flex: 1; }
-.cat-header-count { color: var(--text-secondary); font-size: 12px; }
-
-.error-banner {
-  background: var(--error-bg); color: var(--error);
-  padding: 12px 16px; border-radius: var(--radius-sm);
-  margin-bottom: 14px; font-size: 13px;
-}
-
-/* ================= BOOKING (Виджет-06) ================= */
-.bk-topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.bk-back{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;cursor:pointer;font-size:14px;font-weight:500}
-.bk-back:hover{border-color:var(--primary);color:var(--primary)}
-.bk-title{font-weight:700;font-size:16px}
-
+/* client */
 .client-card{background:var(--primary-bg);border:1px solid var(--primary-light);border-left:4px solid var(--primary);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow);margin-bottom:14px;display:flex;align-items:center;gap:12px}
 .client-info{flex:1}
 .client-name{font-weight:700;font-size:16px;color:var(--primary-hover)}
 .client-meta{color:var(--text-secondary);font-size:13px}
+.client-meta.warn{color:var(--error);font-weight:600}
 .client-badge{background:var(--primary);color:#fff;padding:5px 12px;border-radius:16px;font-size:12px;font-weight:600}
 
+/* accordion */
 .acc{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
 .acc-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;font-weight:600}
 .acc-head .num{font-size:18px}
@@ -227,13 +56,16 @@ body {
 .acc-body{display:none}
 .acc.open .acc-body{display:block}
 
-.svc-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--border-light);cursor:pointer}
+.svc-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--border-light)}
 .svc-row:hover{background:var(--svc-bg)}
 .svc-check{width:18px;height:18px;cursor:pointer;accent-color:var(--svc-accent)}
-.svc-row .nm{flex:1}
+.svc-row .nm{flex:1;cursor:pointer}
 .svc-row.on .nm{font-weight:600;color:var(--svc-text)}
 .svc-row .mt{color:var(--text-muted);font-size:12px;white-space:nowrap}
 .svc-row .pr{font-weight:600;white-space:nowrap}
+.svc-row .rm{background:transparent;color:var(--text-muted);border:none;cursor:pointer;padding:2px 6px;font-size:16px}
+.svc-row .rm:hover{color:var(--error)}
+.svc-empty{padding:18px 16px;text-align:center;color:var(--text-muted);font-size:13px;border-top:1px solid var(--border-light)}
 .svc-addbox{padding:10px 16px;border-top:1px solid var(--border-light)}
 .svc-addin{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;outline:none}
 .svc-addin:focus{border-color:var(--svc-accent)}
@@ -266,6 +98,7 @@ td.busy{background:var(--busy);border-color:var(--busy-border);color:var(--busy-
 td.busy .b-time{font-weight:600}
 td.busy .b-client{font-weight:600}
 td.busy .b-svc{color:#047857;font-size:10px;display:block;overflow:hidden}
+.grid-msg{padding:24px 16px;text-align:center;color:var(--text-muted);font-size:13px}
 
 .confirm{background:var(--card);border:2px solid var(--primary);border-radius:var(--radius);box-shadow:0 6px 20px rgba(124,58,237,.18);padding:16px 18px;margin-bottom:14px}
 .confirm-title{font-weight:700;font-size:15px;margin-bottom:10px;color:var(--primary)}
@@ -280,25 +113,15 @@ td.busy .b-svc{color:#047857;font-size:10px;display:block;overflow:hidden}
 .btn-ghost{flex:0 0 auto;background:var(--card);border:1px solid var(--border);color:var(--text-secondary)}
 .btn-ghost:hover{border-color:var(--error);color:var(--error)}
 .hint{color:var(--text-muted);font-size:12px;margin-top:8px}
-.bk-success{background:var(--success-bg);border:1px solid #a7f3d0;border-radius:var(--radius);padding:28px 20px;text-align:center}
-.bk-success .ic{font-size:48px;margin-bottom:10px}
-.bk-success .msg{font-weight:600;font-size:16px;color:var(--success);margin-bottom:6px}
-.bk-success .sub{color:var(--text-secondary);font-size:13px;margin-bottom:16px}
 </style>
 </head>
 <body>
-<div id="app">
-  <div class="screen-center">
-    <div class="spinner"></div>
-    <div>Загрузка...</div>
-  </div>
-</div>
-<div id="booking" style="display:none"></div>
+<div id="app"><div class="screen-center"><div class="spinner"></div><div>Загрузка...</div></div></div>
 
 <script>
 // =============================================
-// BEAUTY CLINIC — LEAD SERVICES WIDGET v2.0
-// Вкладка «Интересующие услуги» в лиде Б24 + запись через сетку-журнал (Виджет-06).
+// BEAUTY CLINIC — LEAD WIDGET v3.0 (Виджет-06)
+// Один экран: клиент + услуги + журнал записи. Запись через YC API (контакт из лида).
 // =============================================
 
 var PROXY_URL = 'https://144-124-253-45.nip.io/api/proxy';
@@ -306,7 +129,6 @@ var FILIAL_TO_COMPANY = { 669: 671663, 671: 816356 };
 var FILIAL_NAMES = { 669: 'Махачкала', 671: 'Грозный' };
 var FIELD_FILIAL = 'UF_CRM_BRANCH_AUTO';
 
-// Сетка-журнал
 var BK_START_MIN = 540;   // 9:00
 var BK_END_MIN = 1110;    // 18:30
 var BK_SLOTS = (BK_END_MIN - BK_START_MIN) / 30 + 1;
@@ -318,27 +140,17 @@ var state = {
   branchName: '',
   clientName: '',
   clientPhone: '',
-  services: [],
-  categories: [],
-  selectedCategoryId: null,
-  addedRows: [],
-  searchQuery: '',
+  services: [],          // каталог YC
+  addedRows: [],         // услуги в лиде (товарные строки): {id, yc_id, name, price, booked}
+  search: '',            // поиск в ① для добавления
   loading: false,
   error: '',
-  booking: {
-    open: false,
-    staff: [],
-    staffLoaded: false,
-    date: '',
-    records: [],
-    filterStaff: null,
-    selected: null,        // { staffId, slot }
-    openServices: false,
-    openSchedule: true,
-    search: '',
-    creating: false,
-    createdMsg: '',
-    error: ''
+  bk: {                  // журнал
+    staff: [], staffLoaded: false,
+    date: '', records: [], recordsError: '',
+    filterStaff: null, selected: null,
+    openServices: true, openSchedule: true,
+    creating: false, createdMsg: ''
   }
 };
 
@@ -348,282 +160,95 @@ function bx24Call(method, params) {
       if (result.error()) {
         var err = result.error();
         reject(new Error(err.ex ? (err.ex.error_description || err.ex.error) : 'BX24 error'));
-      } else {
-        resolve(result.data());
-      }
+      } else resolve(result.data());
     });
   });
 }
 
-// GET к YC через прокси
 function ycRequest(path, query) {
-  return fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'yclients', path: path, method: 'GET', query: query || {} })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(resp) {
-    if (!resp.ok) throw new Error(resp.error || 'Ошибка прокси');
-    var yc = resp.result;
-    if (yc && yc.success === false) throw new Error((yc.meta && yc.meta.message) || 'Ошибка YCLIENTS');
-    return yc;
-  });
+  return fetch(PROXY_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'yclients', path:path, method:'GET', query: query || {} }) })
+   .then(function(r){return r.json();})
+   .then(function(resp){ if(!resp.ok) throw new Error(resp.error||'Ошибка прокси'); var yc=resp.result; if(yc&&yc.success===false) throw new Error((yc.meta&&yc.meta.message)||'Ошибка YCLIENTS'); return yc; });
 }
-
-// POST к YC через прокси
 function ycPost(path, body) {
-  return fetch(PROXY_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'yclients', path: path, method: 'POST', body: body })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(resp) {
-    if (!resp.ok) throw new Error(resp.error || 'Ошибка прокси');
-    var yc = resp.result;
-    if (yc && yc.success === false) throw new Error((yc.meta && yc.meta.message) || 'Ошибка YCLIENTS');
-    return yc;
-  });
-}
-
-function getInitials(name) {
-  var parts = (name || '').trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return (parts[0] || '?')[0].toUpperCase();
+  return fetch(PROXY_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'yclients', path:path, method:'POST', body: body }) })
+   .then(function(r){return r.json();})
+   .then(function(resp){ if(!resp.ok) throw new Error(resp.error||'Ошибка прокси'); var yc=resp.result; if(yc&&yc.success===false) throw new Error((yc.meta&&yc.meta.message)||'Ошибка YCLIENTS'); return yc; });
 }
 
 function formatPhone(phone) {
-  var digits = (phone || '').replace(/\D/g, '');
-  if (digits.length === 11) {
-    return '+' + digits[0] + ' (' + digits.substr(1,3) + ') ' + digits.substr(4,3) + '-' + digits.substr(7,2) + '-' + digits.substr(9,2);
-  }
+  var d = (phone || '').replace(/\D/g, '');
+  if (d.length === 11) return '+' + d[0] + ' (' + d.substr(1,3) + ') ' + d.substr(4,3) + '-' + d.substr(7,2) + '-' + d.substr(9,2);
   return phone;
 }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function serviceDuration(ycId){ var s=state.services.find(function(x){return x.id===ycId;}); return (s&&Number(s.duration))?Number(s.duration):3600; }
 
-function escapeHtml(s) {
-  return String(s || '').replace(/[&<>"']/g, function(c) {
-    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
-  });
-}
-
-function serviceDuration(ycId) {
-  var s = state.services.find(function(x){ return x.id === ycId; });
-  return (s && Number(s.duration)) ? Number(s.duration) : 3600;
-}
-
-// Загрузка данных лида + услуг YC
+// ---------- загрузка ----------
 async function loadData() {
-  if (state.leadId) {
-    var lead = await bx24Call('crm.lead.get', { id: state.leadId });
-    state.clientName = (lead.NAME || lead.LAST_NAME || lead.TITLE || 'Клиент');
-    if (lead.PHONE && lead.PHONE.length > 0) state.clientPhone = lead.PHONE[0].VALUE || '';
-    state.contactId = lead.CONTACT_ID || null;
+  var lead = await bx24Call('crm.lead.get', { id: state.leadId });
+  state.clientName = (lead.NAME || lead.LAST_NAME || lead.TITLE || 'Клиент');
+  if (lead.PHONE && lead.PHONE.length > 0) state.clientPhone = lead.PHONE[0].VALUE || '';
+  state.contactId = lead.CONTACT_ID || null;
 
-    // Контакт лида — источник истины для имени+телефона (у лида своего телефона часто нет).
-    if (state.contactId) {
-      try {
-        var ct = await bx24Call('crm.contact.get', { id: state.contactId });
-        var cname = [ct.NAME, ct.LAST_NAME].filter(Boolean).join(' ').trim();
-        if (cname) state.clientName = cname;
-        if (!state.clientPhone && ct.PHONE && ct.PHONE.length > 0) state.clientPhone = ct.PHONE[0].VALUE || '';
-      } catch (e) { /* ignore */ }
-    }
-
-    var filialVal = lead[FIELD_FILIAL];
-    if (Array.isArray(filialVal)) filialVal = filialVal[0];
-    filialVal = parseInt(filialVal, 10);
-    state.companyId = FILIAL_TO_COMPANY[filialVal] || 671663;
-    state.branchName = FILIAL_NAMES[filialVal] || 'Махачкала (филиал не выбран)';
-  } else {
-    state.clientName = 'Новый лид (черновик)';
-    state.clientPhone = '';
-    state.companyId = 671663;
-    state.branchName = 'Махачкала (черновик)';
+  if (state.contactId) {
+    try {
+      var ct = await bx24Call('crm.contact.get', { id: state.contactId });
+      var cname = [ct.NAME, ct.LAST_NAME].filter(Boolean).join(' ').trim();
+      if (cname) state.clientName = cname;
+      if (!state.clientPhone && ct.PHONE && ct.PHONE.length > 0) state.clientPhone = ct.PHONE[0].VALUE || '';
+    } catch (e) { /* ignore */ }
   }
+
+  var filialVal = lead[FIELD_FILIAL];
+  if (Array.isArray(filialVal)) filialVal = filialVal[0];
+  filialVal = parseInt(filialVal, 10);
+  state.companyId = FILIAL_TO_COMPANY[filialVal] || 671663;
+  state.branchName = FILIAL_NAMES[filialVal] || 'Махачкала (филиал не выбран)';
 
   var ycServ = await ycRequest('company/' + state.companyId + '/services');
-  state.services = (ycServ.data || []).filter(function(s) { return s.active !== false; })
-    .sort(function(a, b) { return (a.title || '').localeCompare(b.title || '', 'ru'); });
+  state.services = (ycServ.data || []).filter(function(s){ return s.active !== false; })
+    .sort(function(a,b){ return (a.title||'').localeCompare(b.title||'', 'ru'); });
 
-  var ycCat = await ycRequest('service_categories/' + state.companyId);
-  var cats = (ycCat.data || []).filter(function(c) { return c.id !== 1; });
-  var counts = {};
-  state.services.forEach(function(s) { counts[s.category_id] = (counts[s.category_id] || 0) + 1; });
-  state.categories = cats.map(function(c) { return { id: c.id, title: c.title, count: counts[c.id] || 0 }; })
-    .filter(function(c) { return c.count > 0; })
-    .sort(function(a, b) { return a.title.localeCompare(b.title, 'ru'); });
+  var rows = await bx24Call('crm.lead.productrows.get', { id: state.leadId });
+  state.addedRows = (rows || []).map(function(r) {
+    var name = r.PRODUCT_NAME || '';
+    var booked = name.indexOf('✓ ') === 0;
+    var cleanName = booked ? name.slice(2) : name;
+    var svc = state.services.find(function(s){ return s.title === cleanName; });
+    return { id: r.ID || null, yc_id: svc ? svc.id : null, booked: booked, name: cleanName, price: parseFloat(r.PRICE) || 0 };
+  });
 
-  if (state.leadId) {
-    var rows = await bx24Call('crm.lead.productrows.get', { id: state.leadId });
-    state.addedRows = (rows || []).map(function(r) {
-      var name = r.PRODUCT_NAME || '';
-      var booked = name.indexOf('✓ ') === 0;
-      var cleanName = booked ? name.slice(2) : name;
-      var svc = state.services.find(function(s) { return s.title === cleanName; });
-      return { id: r.ID || null, yc_id: svc ? svc.id : null, booked: booked, name: cleanName, price: parseFloat(r.PRICE) || 0 };
-    });
-  }
+  state.bk.date = bkTodayStr();
+  try { await loadStaff(); await loadDayRecords(); }
+  catch (e) { state.bk.recordsError = e.message || 'Журнал не загрузился'; }
+}
+
+async function loadStaff() {
+  var resp = await ycRequest('company/' + state.companyId + '/staff');
+  state.bk.staff = (resp.data || []).filter(function(s){ return !s.fired && !s.hidden; })
+    .map(function(s){ return { id: s.id, name: s.name, spec: s.specialization || '' }; });
+  state.bk.staffLoaded = true;
+}
+async function loadDayRecords() {
+  state.bk.recordsError = '';
+  var d = state.bk.date;
+  var resp = await ycRequest('records/' + state.companyId, { start_date: d, end_date: d });
+  state.bk.records = (resp.data || []).map(function(r){
+    return { staff_id: r.staff_id, datetime: r.datetime, seance_length: r.seance_length || r.length || 3600,
+             client: (r.client && r.client.name) || '', services: (r.services||[]).map(function(s){return s.title;}) };
+  });
 }
 
 async function saveRows() {
   if (!state.leadId) return;
-  var rows = state.addedRows.map(function(r) {
-    return { PRODUCT_NAME: (r.booked ? '✓ ' : '') + r.name, PRICE: r.price, QUANTITY: 1 };
-  });
+  var rows = state.addedRows.map(function(r){ return { PRODUCT_NAME: (r.booked ? '✓ ' : '') + r.name, PRICE: r.price, QUANTITY: 1 }; });
   await bx24Call('crm.lead.productrows.set', { id: state.leadId, rows: rows });
 }
 
-function render() {
-  var html = '';
-
-  html += '<div class="header">';
-  html += '<div class="header-info">';
-  html += '<div class="header-name">' + escapeHtml(state.clientName);
-  if (!state.leadId) {
-    html += ' <span class="draft-hint" title="">💡<span class="draft-hint-text">';
-    html += 'Лид ещё не сохранён. Выбирай услуги — они автоматически перенесутся в карточку сразу как сохранишь лид (имя+телефон+филиал внизу).';
-    html += '</span></span>';
-  }
-  html += '</div>';
-  html += '<div class="header-meta">' + escapeHtml(formatPhone(state.clientPhone)) + '</div>';
-  html += '</div>';
-  if (state.branchName) html += '<div class="branch-badge">' + escapeHtml(state.branchName) + '</div>';
-  html += '</div>';
-
-  if (state.error) html += '<div class="error-banner">⚠ ' + escapeHtml(state.error) + '</div>';
-
-  html += '<div class="section-title">Обсуждали с клиентом (' + state.addedRows.length + ')</div>';
-  html += '<div class="service-list">';
-  if (state.addedRows.length === 0) {
-    html += '<div class="empty">Услуги пока не добавлены</div>';
-  } else {
-    state.addedRows.forEach(function(r, idx) {
-      html += '<div class="added-item' + (r.booked ? ' booked' : '') + '">';
-      html += '<div class="service-name">' + escapeHtml(r.name) + '</div>';
-      html += '<div class="service-price">' + r.price.toLocaleString('ru-RU') + ' ₽</div>';
-      html += '<label class="booked-toggle' + (r.booked ? ' checked' : '') + '">';
-      html += '<input type="checkbox" data-booked="' + idx + '" ' + (r.booked ? 'checked' : '') + '>';
-      html += '<span>Записан</span></label>';
-      html += '<button class="btn-remove" data-remove="' + idx + '" title="Удалить">×</button>';
-      html += '</div>';
-    });
-  }
-  html += '</div>';
-
-  // Кнопка записи — открывает сетку-журнал (Виджет-06). Только для сохранённого лида.
-  var canBook = !!state.leadId && !!state.companyId;
-  html += '<button id="open-booking" class="btn-yc' + (canBook ? '' : ' disabled') + '">📅 Записать на услугу</button>';
-
-  html += '<div class="section-title" style="margin-top: 24px;">Найти и добавить услугу</div>';
-  html += '<div class="search-box">';
-  html += '<input type="text" class="search-input" id="search-input" placeholder="Поиск: биорев, чистка, массаж..." value="' + escapeHtml(state.searchQuery) + '">';
-  html += '</div>';
-
-  var added_ids = state.addedRows.map(function(r) { return r.yc_id; });
-  var q = state.searchQuery.toLowerCase().trim();
-
-  if (q.length >= 2) {
-    var found = state.services.filter(function(s) {
-      return (s.title || '').toLowerCase().indexOf(q) > -1 && added_ids.indexOf(s.id) === -1;
-    }).slice(0, 50);
-    html += '<div class="service-list">';
-    if (found.length === 0) { html += '<div class="empty">Ничего не найдено</div>'; }
-    else {
-      found.forEach(function(s) {
-        var price = s.price_min || s.price || 0;
-        html += '<div class="service-item" data-add="' + s.id + '">';
-        html += '<div class="service-name">' + escapeHtml(s.title) + '</div>';
-        html += '<div class="service-price">' + price.toLocaleString('ru-RU') + ' ₽</div>';
-        html += '<button class="btn-add">+ Добавить</button></div>';
-      });
-    }
-    html += '</div>';
-  } else if (q.length === 1) {
-    html += '<div class="empty" style="background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);">Введите минимум 2 буквы</div>';
-  } else if (state.selectedCategoryId === null) {
-    html += '<div class="cat-grid">';
-    state.categories.forEach(function(c) {
-      html += '<div class="cat-tile" data-cat="' + c.id + '"><div>' + escapeHtml(c.title) + '</div><div class="cat-tile-count">' + c.count + ' услуг</div></div>';
-    });
-    html += '</div>';
-  } else {
-    var cat = state.categories.find(function(c) { return c.id === state.selectedCategoryId; });
-    var catSvc = state.services.filter(function(s) {
-      return s.category_id === state.selectedCategoryId && added_ids.indexOf(s.id) === -1;
-    });
-    html += '<div class="cat-header">';
-    html += '<button class="cat-header-back" id="cat-back">← Все категории</button>';
-    html += '<div class="cat-header-name">' + escapeHtml(cat ? cat.title : '') + '</div>';
-    html += '<div class="cat-header-count">' + catSvc.length + ' услуг</div></div>';
-    html += '<div class="service-list">';
-    if (catSvc.length === 0) { html += '<div class="empty">Все услуги категории уже добавлены</div>'; }
-    else {
-      catSvc.forEach(function(s) {
-        var price = s.price_min || s.price || 0;
-        html += '<div class="service-item" data-add="' + s.id + '">';
-        html += '<div class="service-name">' + escapeHtml(s.title) + '</div>';
-        html += '<div class="service-price">' + price.toLocaleString('ru-RU') + ' ₽</div>';
-        html += '<button class="btn-add">+ Добавить</button></div>';
-      });
-    }
-    html += '</div>';
-  }
-
-  document.getElementById('app').innerHTML = html;
-  autoResize();
-
-  var searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', function(e) {
-      state.searchQuery = e.target.value;
-      render();
-      var inp = document.getElementById('search-input');
-      if (inp) { inp.focus(); inp.setSelectionRange(state.searchQuery.length, state.searchQuery.length); }
-    });
-  }
-
-  var ob = document.getElementById('open-booking');
-  if (ob) ob.addEventListener('click', function() { if (canBook) openBooking(); });
-
-  document.querySelectorAll('[data-add]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var ycId = parseInt(btn.getAttribute('data-add'), 10);
-      var svc = state.services.find(function(s) { return s.id === ycId; });
-      if (!svc) return;
-      state.addedRows.push({ yc_id: svc.id, name: svc.title, price: svc.price_min || svc.price || 0, booked: false });
-      state.searchQuery = '';
-      saveRows().then(render).catch(function(e) { state.error = 'Ошибка сохранения: ' + e.message; render(); });
-    });
-  });
-
-  document.querySelectorAll('[data-cat]').forEach(function(tile) {
-    tile.addEventListener('click', function() { state.selectedCategoryId = parseInt(tile.getAttribute('data-cat'), 10); render(); });
-  });
-
-  var backBtn = document.getElementById('cat-back');
-  if (backBtn) backBtn.addEventListener('click', function() { state.selectedCategoryId = null; render(); });
-
-  document.querySelectorAll('[data-remove]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var idx = parseInt(btn.getAttribute('data-remove'), 10);
-      state.addedRows.splice(idx, 1);
-      saveRows().then(render).catch(function(e) { state.error = 'Ошибка сохранения: ' + e.message; render(); });
-    });
-  });
-
-  document.querySelectorAll('[data-booked]').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-      var idx = parseInt(cb.getAttribute('data-booked'), 10);
-      state.addedRows[idx].booked = cb.checked;
-      saveRows().then(render).catch(function(e) { state.error = 'Ошибка сохранения: ' + e.message; render(); });
-    });
-  });
-}
-
-// ============================================================
-// BOOKING — сетка-журнал (Виджет-06, Фаза A)
-// ============================================================
+// ---------- booking helpers ----------
 function bkPad(n){ return n<10 ? '0'+n : ''+n; }
 function bkTodayStr(){ var d=new Date(); return d.getFullYear()+'-'+bkPad(d.getMonth()+1)+'-'+bkPad(d.getDate()); }
 function bkSlotTime(i){ var m=BK_START_MIN+i*30; return bkPad(Math.floor(m/60))+':'+bkPad(m%60); }
@@ -634,16 +259,15 @@ function bkDur(sec){ var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); var 
 function bkDdmm(s){ var mn=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']; var d=new Date(s+'T12:00:00'); return d.getDate()+' '+mn[d.getMonth()]; }
 function bkWeekday(s){ var w=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота']; return w[new Date(s+'T12:00:00').getDay()]; }
 function bkShift(s,days){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+days); return d.getFullYear()+'-'+bkPad(d.getMonth()+1)+'-'+bkPad(d.getDate()); }
-function bkStaffName(id){ var s=state.booking.staff.find(function(x){return x.id===id;}); return s?s.name:''; }
+function bkStaffName(id){ var s=state.bk.staff.find(function(x){return x.id===id;}); return s?s.name:''; }
 function bkBookedRows(){ return state.addedRows.filter(function(r){ return r.booked; }); }
 function bkBookable(){ return state.addedRows.filter(function(r){ return r.booked && r.yc_id; }); }
 function bkTotalDur(){ return bkBookable().reduce(function(a,r){ return a+serviceDuration(r.yc_id); }, 0); }
 function bkTotalPrice(){ return bkBookedRows().reduce(function(a,r){ return a+(r.price||0); }, 0); }
-function bkVisibleStaff(){ return state.booking.filterStaff ? state.booking.staff.filter(function(s){return s.id===state.booking.filterStaff;}) : state.booking.staff; }
-
+function bkVisibleStaff(){ return state.bk.filterStaff ? state.bk.staff.filter(function(s){return s.id===state.bk.filterStaff;}) : state.bk.staff; }
 function bkBusyMap(staffId){
   var map={};
-  state.booking.records.filter(function(r){return r.staff_id===staffId;}).forEach(function(r){
+  state.bk.records.filter(function(r){return r.staff_id===staffId;}).forEach(function(r){
     var st=bkDtToSlot(r.datetime); if(st<0||st>=BK_SLOTS) return;
     var sp=bkSpan(r.seance_length);
     map[st]={type:'start',rec:r,span:Math.min(sp,BK_SLOTS-st)};
@@ -652,252 +276,205 @@ function bkBusyMap(staffId){
   return map;
 }
 
-async function loadStaff() {
-  var resp = await ycRequest('company/' + state.companyId + '/staff');
-  state.booking.staff = (resp.data || []).filter(function(s){ return !s.fired && !s.hidden; })
-    .map(function(s){ return { id: s.id, name: s.name, spec: s.specialization || '' }; });
-  state.booking.staffLoaded = true;
+// ---------- render ----------
+function renderPrompt() {
+  document.getElementById('app').innerHTML =
+    '<div class="prompt"><div class="ic">📝</div><div class="t">Сначала сохрани лид с клиентом</div>' +
+    '<div class="d">Чтобы появился журнал записи и услуги начали сохраняться:<ol>' +
+    '<li>Впиши <b>имя</b> и <b>телефон</b> клиента в карточке лида (поле «Клиент»/«Контакт»)</li>' +
+    '<li>Поставь <b>Филиал</b> (Махачкала / Грозный)</li>' +
+    '<li>Нажми <b>«Сохранить»</b> внизу карточки</li>' +
+    '</ol><div style="margin-top:12px;color:var(--text-muted)">После сохранения эта вкладка сама обновится — появятся услуги и журнал записи.</div></div></div>';
+  autoResize();
 }
 
-async function loadDayRecords() {
-  var d = state.booking.date;
-  var resp = await ycRequest('records/' + state.companyId, { start_date: d, end_date: d });
-  state.booking.records = (resp.data || []).map(function(r){
-    return {
-      staff_id: r.staff_id,
-      datetime: r.datetime,
-      seance_length: r.seance_length || r.length || 3600,
-      client: (r.client && r.client.name) || '',
-      services: (r.services || []).map(function(s){ return s.title; })
-    };
-  });
-}
+function render() {
+  if (!state.leadId) { renderPrompt(); return; }
 
-async function openBooking() {
-  if (!state.clientPhone) { alert('У клиента нет телефона (ни в лиде, ни в контакте). Заполни телефон — без него запись в YC не создать.'); return; }
-  var b = state.booking;
-  b.open = true; b.selected = null; b.error = ''; b.createdMsg = ''; b.search = '';
-  if (!b.date) b.date = bkTodayStr();
-  document.getElementById('app').style.display = 'none';
-  var bm = document.getElementById('booking');
-  bm.style.display = 'block';
-  bm.innerHTML = '<div class="screen-center"><div class="spinner"></div><div>Загрузка журнала...</div></div>';
-  bkResize();
-  try {
-    if (!b.staffLoaded) await loadStaff();
-    await loadDayRecords();
-    renderBooking();
-  } catch (e) {
-    bm.innerHTML = '<div class="bk-topbar"><button class="bk-back" id="bk-back">← Назад</button></div><div class="error-banner">⚠ ' + escapeHtml(e.message || 'Ошибка загрузки журнала') + '</div>';
-    var bb = document.getElementById('bk-back'); if (bb) bb.addEventListener('click', closeBooking);
-  }
-}
-
-function closeBooking() {
-  state.booking.open = false;
-  document.getElementById('booking').style.display = 'none';
-  document.getElementById('app').style.display = '';
-  render();
-}
-
-async function reloadDay() {
-  var bm = document.getElementById('booking');
-  try { await loadDayRecords(); renderBooking(); }
-  catch (e) { state.booking.error = 'Ошибка загрузки дня: ' + e.message; renderBooking(); }
-}
-
-function renderBooking() {
-  var b = state.booking;
-  var bm = document.getElementById('booking');
-
-  // экран успеха
-  if (b.createdMsg) {
-    var h2 = '<div class="bk-topbar"><div class="bk-title">Запись</div></div>';
-    h2 += '<div class="bk-success"><div class="ic">✅</div><div class="msg">' + escapeHtml(b.createdMsg) + '</div>';
-    h2 += '<div class="sub">Запись ушла в YC с контактом клиента. Сделка появится автоматически.</div>';
-    h2 += '<button class="btn btn-primary" id="bk-done" style="max-width:240px;margin:0 auto">Готово</button></div>';
-    bm.innerHTML = h2;
-    document.getElementById('bk-done').addEventListener('click', closeBooking);
-    bkResize();
-    return;
-  }
-
-  var bookable = bkBookable();
+  var b = state.bk;
   var bookedRows = bkBookedRows();
+  var bookable = bkBookable();
+  var hasPhone = !!(state.clientPhone || '').replace(/\D/g,'');
   var html = '';
-  html += '<div class="bk-topbar"><button class="bk-back" id="bk-back">← Назад</button><div class="bk-title">Запись на услугу</div></div>';
 
-  // клиент
+  // client
   html += '<div class="client-card"><div class="client-info">';
   html += '<div class="client-name">' + escapeHtml(state.clientName) + '</div>';
-  html += '<div class="client-meta">' + escapeHtml(formatPhone(state.clientPhone)) + ' · контакт из лида</div>';
+  if (hasPhone) html += '<div class="client-meta">' + escapeHtml(formatPhone(state.clientPhone)) + ' · контакт из лида</div>';
+  else html += '<div class="client-meta warn">⚠ нет телефона — добавь в контакт лида, иначе запись не создать</div>';
   html += '</div><div class="client-badge">' + escapeHtml(state.branchName) + '</div></div>';
 
-  if (b.error) html += '<div class="error-banner">⚠ ' + escapeHtml(b.error) + '</div>';
+  if (state.error) html += '<div class="error-banner">⚠ ' + escapeHtml(state.error) + '</div>';
+  if (b.createdMsg) html += '<div class="ok-banner">✅ ' + escapeHtml(b.createdMsg) + '<div style="font-weight:400;font-size:12px;margin-top:4px">Запись ушла в YC с контактом клиента. Сделка появится автоматически.</div></div>';
 
   // ① услуги
-  var selNames = bookedRows.length ? bookedRows.map(function(r){return r.name;}).join(', ') : 'ничего не выбрано';
-  html += '<div class="acc' + (b.openServices ? ' open' : '') + '">';
-  html += '<div class="acc-head services" data-acc="services"><span class="num">①</span><span class="ttl">Какие услуги записываем</span>';
-  html += '<span class="sub">' + bookedRows.length + ' выбрано · ' + bkMoney(bkTotalPrice()) + (bookedRows.length ? ' · ' + escapeHtml(selNames) : '') + '</span><span class="chev">▶</span></div>';
+  var selNames = bookedRows.length ? bookedRows.map(function(r){return r.name;}).join(', ') : 'ничего не отмечено';
+  html += '<div class="acc' + (b.openServices?' open':'') + '"><div class="acc-head services" data-acc="services">';
+  html += '<span class="num">①</span><span class="ttl">Услуги (обсуждаем / записываем)</span>';
+  html += '<span class="sub">' + bookedRows.length + ' на запись · ' + bkMoney(bkTotalPrice()) + '</span><span class="chev">▶</span></div>';
   html += '<div class="acc-body">';
   if (state.addedRows.length === 0) {
-    html += '<div class="empty">Нет обсуждённых услуг. Закрой запись, добавь услуги в «Обсуждали с клиентом», или найди ниже.</div>';
+    html += '<div class="svc-empty">Услуг пока нет. Найди и добавь ниже — отмечай галочкой те, на которые записываем.</div>';
   }
-  state.addedRows.forEach(function(r, idx) {
-    html += '<label class="svc-row' + (r.booked ? ' on' : '') + '">';
-    html += '<input type="checkbox" class="svc-check" data-bk-svc="' + idx + '" ' + (r.booked ? 'checked' : '') + '>';
-    html += '<span class="nm">' + escapeHtml(r.name) + (r.yc_id ? '' : ' <span style="color:var(--error);font-size:11px">(нет в каталоге YC)</span>') + '</span>';
-    html += '<span class="mt">' + (r.yc_id ? bkDur(serviceDuration(r.yc_id)) : '') + '</span>';
-    html += '<span class="pr">' + bkMoney(r.price || 0) + '</span></label>';
+  state.addedRows.forEach(function(r, idx){
+    html += '<div class="svc-row' + (r.booked?' on':'') + '">';
+    html += '<input type="checkbox" class="svc-check" data-booked="' + idx + '" ' + (r.booked?'checked':'') + ' title="Записать на эту услугу">';
+    html += '<span class="nm">' + escapeHtml(r.name) + (r.yc_id?'':' <span style="color:var(--error);font-size:11px">(нет в каталоге YC)</span>') + '</span>';
+    html += '<span class="mt">' + (r.yc_id?bkDur(serviceDuration(r.yc_id)):'') + '</span>';
+    html += '<span class="pr">' + bkMoney(r.price||0) + '</span>';
+    html += '<button class="rm" data-remove="' + idx + '" title="Убрать">×</button></div>';
   });
-  html += '<div class="svc-addbox"><input type="text" class="svc-addin" id="bk-search" placeholder="+ Добавить услугу: поиск..." value="' + escapeHtml(b.search) + '">';
-  var q = b.search.toLowerCase().trim();
+  html += '<div class="svc-addbox"><input type="text" class="svc-addin" id="svc-search" placeholder="+ Добавить услугу: поиск по названию..." value="' + escapeHtml(state.search) + '">';
+  var q = state.search.toLowerCase().trim();
   if (q.length >= 2) {
-    var have = state.addedRows.map(function(r){ return r.yc_id; });
-    var found = state.services.filter(function(s){ return (s.title||'').toLowerCase().indexOf(q) > -1 && have.indexOf(s.id) === -1; }).slice(0, 6);
+    var have = state.addedRows.map(function(r){return r.yc_id;});
+    var found = state.services.filter(function(s){ return (s.title||'').toLowerCase().indexOf(q)>-1 && have.indexOf(s.id)===-1; }).slice(0,8);
     html += '<div class="svc-addres">';
     if (!found.length) html += '<div class="svc-additem" style="color:var(--text-muted)">Ничего не найдено</div>';
-    found.forEach(function(s){
-      var price = s.price_min || s.price || 0;
-      html += '<div class="svc-additem" data-bk-add="' + s.id + '"><span>' + escapeHtml(s.title) + '</span><span class="mt">' + bkMoney(price) + '</span><span class="svc-addplus">+ добавить</span></div>';
-    });
+    found.forEach(function(s){ var p=s.price_min||s.price||0; html += '<div class="svc-additem" data-add="' + s.id + '"><span>' + escapeHtml(s.title) + '</span><span class="mt">' + bkMoney(p) + '</span><span class="svc-addplus">+ добавить</span></div>'; });
     html += '</div>';
-  }
+  } else if (q.length === 1) { html += '<div class="hint">Введите минимум 2 буквы</div>'; }
   html += '</div>';
-  html += '<div class="svc-sum">Выбрано: <b>' + bookedRows.length + '</b> · Длительность: <b>' + (bkTotalDur() ? bkDur(bkTotalDur()) : '—') + '</b> · Сумма: <b>' + bkMoney(bkTotalPrice()) + '</b></div>';
+  html += '<div class="svc-sum">На запись: <b>' + bookedRows.length + '</b> · Длительность: <b>' + (bkTotalDur()?bkDur(bkTotalDur()):'—') + '</b> · Сумма: <b>' + bkMoney(bkTotalPrice()) + '</b></div>';
   html += '</div></div>';
 
   // ② журнал
-  html += '<div class="acc' + (b.openSchedule ? ' open' : '') + '">';
-  html += '<div class="acc-head schedule" data-acc="schedule"><span class="num">②</span><span class="ttl">Журнал — выбрать время</span>';
-  html += '<span class="sub">' + bkDdmm(b.date) + ', ' + bkWeekday(b.date) + (b.filterStaff ? ' · ' + escapeHtml(bkStaffName(b.filterStaff)) : '') + '</span><span class="chev">▶</span></div>';
+  html += '<div class="acc' + (b.openSchedule?' open':'') + '"><div class="acc-head schedule" data-acc="schedule">';
+  html += '<span class="num">②</span><span class="ttl">Журнал — выбрать время</span>';
+  html += '<span class="sub">' + bkDdmm(b.date) + ', ' + bkWeekday(b.date) + (b.filterStaff?' · '+escapeHtml(bkStaffName(b.filterStaff)):'') + '</span><span class="chev">▶</span></div>';
   html += '<div class="acc-body">';
   html += '<div class="bk-toolbar"><button class="bk-nav" data-bk-nav="today">Сегодня</button><button class="bk-nav" data-bk-nav="-1">‹</button>';
   html += '<div class="bk-date">' + bkDdmm(b.date) + ', ' + bkWeekday(b.date) + '</div><button class="bk-nav" data-bk-nav="1">›</button>';
   html += '<div class="bk-filter"><span style="color:var(--text-secondary);font-size:13px">Врач:</span><select id="bk-staff-sel"><option value="">Все врачи</option>';
-  state.booking.staff.forEach(function(s){ html += '<option value="' + s.id + '" ' + (b.filterStaff === s.id ? 'selected' : '') + '>' + escapeHtml(s.name) + '</option>'; });
+  state.bk.staff.forEach(function(s){ html += '<option value="' + s.id + '" ' + (b.filterStaff===s.id?'selected':'') + '>' + escapeHtml(s.name) + '</option>'; });
   html += '</select></div></div>';
 
-  var staff = bkVisibleStaff();
-  var maps = {}; staff.forEach(function(s){ maps[s.id] = bkBusyMap(s.id); });
-  html += '<div class="grid-wrap"><table class="grid"><thead><tr><th class="col-time"></th>';
-  staff.forEach(function(s){ html += '<th>' + escapeHtml(s.name) + '<span class="spec">' + escapeHtml(s.spec) + '</span></th>'; });
-  html += '</tr></thead><tbody>';
-  for (var r = 0; r < BK_SLOTS; r++) {
-    html += '<tr><td class="time">' + bkSlotTime(r) + '</td>';
-    staff.forEach(function(s){
-      var cell = maps[s.id][r];
-      if (cell && cell.type === 'cont') return;
-      if (cell && cell.type === 'start') {
-        var rec = cell.rec;
-        html += '<td class="busy" rowspan="' + cell.span + '"><div class="b-time">' + rec.datetime.substr(11,5) + '</div><div class="b-client">' + escapeHtml(rec.client || 'Занято') + '</div><span class="b-svc">' + escapeHtml(rec.services.join(', ')) + '</span></td>';
-      } else {
-        var isSel = b.selected && b.selected.staffId === s.id && b.selected.slot === r;
-        html += '<td class="free' + (isSel ? ' sel' : '') + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
-      }
-    });
-    html += '</tr>';
+  if (b.recordsError) {
+    html += '<div class="grid-msg" style="color:var(--error)">⚠ ' + escapeHtml(b.recordsError) + '</div>';
+  } else if (!state.bk.staff.length) {
+    html += '<div class="grid-msg">Врачи не загрузились</div>';
+  } else {
+    var staff = bkVisibleStaff();
+    var maps = {}; staff.forEach(function(s){ maps[s.id] = bkBusyMap(s.id); });
+    html += '<div class="grid-wrap"><table class="grid"><thead><tr><th class="col-time"></th>';
+    staff.forEach(function(s){ html += '<th>' + escapeHtml(s.name) + '<span class="spec">' + escapeHtml(s.spec) + '</span></th>'; });
+    html += '</tr></thead><tbody>';
+    for (var r = 0; r < BK_SLOTS; r++) {
+      html += '<tr><td class="time">' + bkSlotTime(r) + '</td>';
+      staff.forEach(function(s){
+        var cell = maps[s.id][r];
+        if (cell && cell.type === 'cont') return;
+        if (cell && cell.type === 'start') {
+          var rec = cell.rec;
+          html += '<td class="busy" rowspan="' + cell.span + '"><div class="b-time">' + rec.datetime.substr(11,5) + '</div><div class="b-client">' + escapeHtml(rec.client||'Занято') + '</div><span class="b-svc">' + escapeHtml(rec.services.join(', ')) + '</span></td>';
+        } else {
+          var isSel = b.selected && b.selected.staffId===s.id && b.selected.slot===r;
+          html += '<td class="free' + (isSel?' sel':'') + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
+        }
+      });
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
   }
-  html += '</tbody></table></div></div></div>';
+  html += '</div></div>';
 
   // ③ подтверждение
   if (b.selected) {
-    var canBook = bookable.length > 0;
+    var canBook = bookable.length > 0 && hasPhone && !b.creating;
     html += '<div class="confirm"><div class="confirm-title">Подтверждение записи</div><div class="confirm-grid">';
-    html += '<div class="k">Клиент</div><div class="v">' + escapeHtml(state.clientName) + ' · ' + escapeHtml(formatPhone(state.clientPhone)) + '</div>';
-    html += '<div class="k">Услуги</div><div class="v">' + (canBook ? escapeHtml(bookable.map(function(r){return r.name;}).join(', ')) : '<span style="color:var(--error)">не отмечены</span>') + '</div>';
+    html += '<div class="k">Клиент</div><div class="v">' + escapeHtml(state.clientName) + (hasPhone?' · '+escapeHtml(formatPhone(state.clientPhone)):' · <span style="color:var(--error)">нет телефона</span>') + '</div>';
+    html += '<div class="k">Услуги</div><div class="v">' + (bookable.length?escapeHtml(bookable.map(function(r){return r.name;}).join(', ')):'<span style="color:var(--error)">не отмечены</span>') + '</div>';
     html += '<div class="k">Врач</div><div class="v">' + escapeHtml(bkStaffName(b.selected.staffId)) + '</div>';
     html += '<div class="k">Дата и время</div><div class="v">' + bkDdmm(b.date) + ', ' + bkSlotTime(b.selected.slot) + '</div>';
-    html += '<div class="k">Длительность</div><div class="v">' + (bkTotalDur() ? bkDur(bkTotalDur()) : '—') + '</div>';
+    html += '<div class="k">Длительность</div><div class="v">' + (bkTotalDur()?bkDur(bkTotalDur()):'—') + '</div>';
     html += '<div class="k">Сумма</div><div class="v">' + bkMoney(bkTotalPrice()) + '</div></div>';
-    html += '<div class="btn-row"><button class="btn btn-primary" id="bk-create" ' + (canBook && !b.creating ? '' : 'disabled') + '>' + (b.creating ? 'Создаю…' : 'Создать запись') + '</button><button class="btn btn-ghost" id="bk-cancel">Отмена</button></div>';
-    if (!canBook) html += '<div class="hint">↑ Открой блок ① и отметь галочками услуги, на которые записываем.</div>';
+    html += '<div class="btn-row"><button class="btn btn-primary" id="bk-create" ' + (canBook?'':'disabled') + '>' + (b.creating?'Создаю…':'Создать запись') + '</button><button class="btn btn-ghost" id="bk-cancel">Отмена</button></div>';
+    if (!bookable.length) html += '<div class="hint">↑ В блоке ① отметь галочками услуги, на которые записываем.</div>';
+    else if (!hasPhone) html += '<div class="hint">↑ Добавь телефон клиента в контакт лида — без него запись не создать.</div>';
     html += '</div>';
   }
 
-  bm.innerHTML = html;
-  bkResize();
-  bindBooking();
+  document.getElementById('app').innerHTML = html;
+  autoResize();
+  bindAll();
 }
 
-function bindBooking() {
-  var bb = document.getElementById('bk-back'); if (bb) bb.addEventListener('click', closeBooking);
-
+function bindAll() {
   document.querySelectorAll('[data-acc]').forEach(function(h){
     h.addEventListener('click', function(){
       var k = h.getAttribute('data-acc');
-      if (k === 'services') state.booking.openServices = !state.booking.openServices; else state.booking.openSchedule = !state.booking.openSchedule;
-      renderBooking();
+      if (k==='services') state.bk.openServices=!state.bk.openServices; else state.bk.openSchedule=!state.bk.openSchedule;
+      render();
     });
   });
 
-  document.querySelectorAll('[data-bk-svc]').forEach(function(cb){
-    cb.addEventListener('click', function(e){ e.stopPropagation(); });
-    cb.addEventListener('change', function(){
-      var idx = parseInt(cb.getAttribute('data-bk-svc'), 10);
-      state.addedRows[idx].booked = cb.checked;
-      renderBooking();
-      saveRows().catch(function(e){ state.booking.error = 'Не сохранилось в лид: ' + e.message; renderBooking(); });
-    });
-  });
+  var si = document.getElementById('svc-search');
+  if (si) si.addEventListener('input', function(e){ state.search=e.target.value; render(); var x=document.getElementById('svc-search'); if(x){x.focus();x.setSelectionRange(x.value.length,x.value.length);} });
 
-  var si = document.getElementById('bk-search');
-  if (si) si.addEventListener('input', function(e){
-    state.booking.search = e.target.value; renderBooking();
-    var x = document.getElementById('bk-search'); if (x) { x.focus(); x.setSelectionRange(x.value.length, x.value.length); }
-  });
-
-  document.querySelectorAll('[data-bk-add]').forEach(function(el){
+  document.querySelectorAll('[data-add]').forEach(function(el){
     el.addEventListener('click', function(){
-      var id = parseInt(el.getAttribute('data-bk-add'), 10);
-      var svc = state.services.find(function(s){ return s.id === id; });
-      if (svc) {
-        state.addedRows.push({ yc_id: svc.id, name: svc.title, price: svc.price_min || svc.price || 0, booked: true });
-        state.booking.search = '';
-        renderBooking();
-        saveRows().catch(function(e){ state.booking.error = 'Не сохранилось в лид: ' + e.message; renderBooking(); });
-      }
+      var id = parseInt(el.getAttribute('data-add'), 10);
+      var svc = state.services.find(function(s){return s.id===id;});
+      if (!svc) return;
+      state.addedRows.push({ yc_id: svc.id, name: svc.title, price: svc.price_min||svc.price||0, booked: false });
+      state.search = '';
+      render();
+      saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
+    });
+  });
+
+  document.querySelectorAll('[data-remove]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = parseInt(btn.getAttribute('data-remove'), 10);
+      state.addedRows.splice(idx, 1);
+      render();
+      saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
+    });
+  });
+
+  document.querySelectorAll('[data-booked]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var idx = parseInt(cb.getAttribute('data-booked'), 10);
+      state.addedRows[idx].booked = cb.checked;
+      render();
+      saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
     });
   });
 
   document.querySelectorAll('[data-bk-nav]').forEach(function(btn){
     btn.addEventListener('click', function(){
       var v = btn.getAttribute('data-bk-nav');
-      state.booking.date = (v === 'today') ? bkTodayStr() : bkShift(state.booking.date, parseInt(v, 10));
-      state.booking.selected = null;
-      reloadDay();
+      state.bk.date = (v==='today') ? bkTodayStr() : bkShift(state.bk.date, parseInt(v,10));
+      state.bk.selected = null;
+      render();
+      loadDayRecords().then(render).catch(function(e){ state.bk.recordsError=e.message; render(); });
     });
   });
 
   var ss = document.getElementById('bk-staff-sel');
-  if (ss) ss.addEventListener('change', function(){ state.booking.filterStaff = ss.value ? parseInt(ss.value, 10) : null; state.booking.selected = null; renderBooking(); });
+  if (ss) ss.addEventListener('change', function(){ state.bk.filterStaff = ss.value?parseInt(ss.value,10):null; state.bk.selected=null; render(); });
 
   document.querySelectorAll('td.free').forEach(function(td){
-    td.addEventListener('click', function(){
-      state.booking.selected = { staffId: parseInt(td.getAttribute('data-bk-staff'), 10), slot: parseInt(td.getAttribute('data-bk-slot'), 10) };
-      renderBooking();
-    });
+    td.addEventListener('click', function(){ state.bk.selected = { staffId: parseInt(td.getAttribute('data-bk-staff'),10), slot: parseInt(td.getAttribute('data-bk-slot'),10) }; render(); });
   });
 
   var bc = document.getElementById('bk-create'); if (bc) bc.addEventListener('click', createBooking);
-  var bx = document.getElementById('bk-cancel'); if (bx) bx.addEventListener('click', function(){ state.booking.selected = null; renderBooking(); });
+  var bx = document.getElementById('bk-cancel'); if (bx) bx.addEventListener('click', function(){ state.bk.selected=null; render(); });
 }
 
 async function createBooking() {
-  var b = state.booking;
+  var b = state.bk;
   var bookable = bkBookable();
-  if (!bookable.length) { b.error = 'Отметь хотя бы одну услугу для записи'; renderBooking(); return; }
-  if (!b.selected) return;
-  b.creating = true; b.error = ''; renderBooking();
+  if (!bookable.length || !b.selected) return;
+  if (!(state.clientPhone||'').replace(/\D/g,'')) { state.error='У клиента нет телефона'; render(); return; }
+  b.creating = true; state.error=''; render();
   try {
-    var totalLen = bkTotalDur() || 3600;
     var body = {
       staff_id: b.selected.staffId,
       services: bookable.map(function(r){ return { id: r.yc_id, amount: 1 }; }),
       client: { phone: state.clientPhone, name: state.clientName },
       datetime: b.date + 'T' + bkSlotTime(b.selected.slot) + ':00+03:00',
-      seance_length: totalLen,
+      seance_length: bkTotalDur() || 3600,
       save_if_busy: false
     };
     var resp = await ycPost('records/' + state.companyId, body);
@@ -906,34 +483,25 @@ async function createBooking() {
     if (!recId) throw new Error('YC не вернул ID записи');
     b.creating = false;
     b.createdMsg = 'Запись создана: ' + bkDdmm(b.date) + ' ' + bkSlotTime(b.selected.slot) + ', ' + bkStaffName(b.selected.staffId);
-    renderBooking();
+    b.selected = null;
+    render();
   } catch (e) {
     b.creating = false;
     var msg = e.message || 'не удалось создать запись';
-    if (/busy|занят/i.test(msg)) { b.error = 'Этот слот только что заняли — выбери другое время.'; b.selected = null; reloadDay(); return; }
-    b.error = 'Ошибка создания записи: ' + msg;
-    renderBooking();
+    if (/busy|занят/i.test(msg)) { state.error='Этот слот только что заняли — выбери другое время.'; b.selected=null; loadDayRecords().then(render).catch(function(){render();}); return; }
+    state.error = 'Ошибка создания записи: ' + msg;
+    render();
   }
 }
 
 function renderError(msg) {
-  document.getElementById('app').innerHTML =
-    '<div class="screen-center"><div style="font-size: 48px;">⚠</div><div>' + escapeHtml(msg) + '</div></div>';
+  document.getElementById('app').innerHTML = '<div class="screen-center"><div style="font-size:48px;">⚠</div><div>' + escapeHtml(msg) + '</div></div>';
 }
-
 function autoResize() {
   try {
     if (typeof BX24 === 'undefined' || !BX24.resizeWindow) return;
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 800);
-    BX24.resizeWindow(document.body.scrollWidth, h);
-  } catch (e) { /* ignore */ }
-}
-
-function bkResize() {
-  try {
-    if (typeof BX24 === 'undefined' || !BX24.resizeWindow) return;
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 900);
-    BX24.resizeWindow(document.body.scrollWidth, Math.max(h, 1100));
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 700);
+    BX24.resizeWindow(document.body.scrollWidth, Math.max(h, 900));
   } catch (e) { /* ignore */ }
 }
 
@@ -944,21 +512,18 @@ BX24.init(function() {
     state.leadId = parseInt(rawId, 10) || 0;
 
     if (!state.leadId) {
-      var pollInterval = setInterval(function() {
+      renderPrompt();
+      var poll = setInterval(function() {
         try {
           var p = BX24.placement.info();
           var id = parseInt(p && p.options && p.options.ID, 10) || 0;
-          if (id) {
-            state.leadId = id;
-            clearInterval(pollInterval);
-            var pending = state.addedRows.length > 0 ? saveRows() : Promise.resolve();
-            pending.then(loadData).then(render).catch(function(e) { renderError(e.message || 'Ошибка загрузки'); });
-          }
+          if (id) { state.leadId = id; clearInterval(poll); loadData().then(render).catch(function(e){ renderError(e.message||'Ошибка загрузки'); }); }
         } catch (e) { /* ignore */ }
       }, 2000);
+      return;
     }
 
-    loadData().then(render).catch(function(e) { renderError(e.message || 'Ошибка загрузки'); });
+    loadData().then(render).catch(function(e){ renderError(e.message || 'Ошибка загрузки'); });
   } catch (e) {
     renderError(e.message || 'Ошибка инициализации');
   }
