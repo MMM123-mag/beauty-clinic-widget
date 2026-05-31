@@ -100,7 +100,9 @@ td.time{background:var(--sch-bg);color:var(--text-secondary);font-size:11px;text
 td.free{height:22px;cursor:pointer;transition:background .1s}
 td.hourline{border-top:1.5px solid #cbd5e1 !important}
 td.free:hover{background:var(--primary-light)}
-td.free.sel{background:var(--primary);border-color:var(--primary)}
+td.sel-block{background:var(--primary);color:#fff;font-size:11px;line-height:1.4;padding:5px 8px;vertical-align:top;border-color:var(--primary)}
+td.sel-block .b-time{font-weight:700;margin-bottom:3px}
+td.sel-block .sel-svc{font-size:11px;opacity:.95}
 td.busy{background:var(--busy);border-color:var(--busy-border);color:var(--busy-text);font-size:11px;line-height:1.3;padding:4px 6px;vertical-align:top}
 td.busy .b-time{font-weight:600}
 td.busy .b-client{font-weight:600}
@@ -392,6 +394,17 @@ function render() {
     var staff = bkVisibleStaff();
     var maps = {}; staff.forEach(function(s){ maps[s.id] = bkBusyMap(s.id); });
     var selSpan = Math.max(1, Math.ceil(bkTotalDur()/(BK_STEP*60))); // сколько 15-мин слотов займёт выбранная запись
+    // Блок выбранного слота (фиолетовый): rowspan на длительность, кап по первой занятой ячейке.
+    var selStaff = b.selected ? b.selected.staffId : null;
+    var selStart = b.selected ? b.selected.slot : -1;
+    var selEff = selSpan;
+    if (b.selected) {
+      var sbm = maps[selStaff] || {};
+      for (var sk = 1; sk < selSpan && selStart + sk < BK_SLOTS; sk++) { if (sbm[selStart + sk]) { selEff = sk; break; } }
+      if (selStart + selEff > BK_SLOTS) selEff = BK_SLOTS - selStart;
+    }
+    var selListHtml = bkBookedRows().map(function(x){ return '• ' + escapeHtml(x.name); }).join('<br>');
+
     html += '<div class="grid-wrap"><table class="grid"><thead><tr><th class="col-time"></th>';
     staff.forEach(function(s){ html += '<th>' + escapeHtml(s.name) + '<span class="spec">' + escapeHtml(s.spec) + '</span></th>'; });
     html += '<th class="col-time"></th></tr></thead><tbody>';
@@ -403,12 +416,16 @@ function render() {
       staff.forEach(function(s){
         var cell = maps[s.id][r];
         if (cell && cell.type === 'cont') return;
+        if (s.id === selStaff && r === selStart) {
+          html += '<td class="sel-block" rowspan="' + selEff + '"><div class="b-time">' + bkSlotTime(selStart) + ' – ' + bkEndTime(selStart, bkTotalDur()) + '</div><div class="sel-svc">' + (selListHtml || 'выбери услуги в ①') + '</div></td>';
+          return;
+        }
+        if (s.id === selStaff && r > selStart && r < selStart + selEff) return;
         if (cell && cell.type === 'start') {
           var rec = cell.rec;
           html += '<td class="busy' + hl + '" rowspan="' + cell.span + '"><div class="b-time">' + rec.datetime.substr(11,5) + '</div><div class="b-client">' + escapeHtml(rec.client||'Занято') + '</div><span class="b-svc">' + escapeHtml(rec.services.join(', ')) + '</span></td>';
         } else {
-          var isSel = b.selected && b.selected.staffId===s.id && r >= b.selected.slot && r < b.selected.slot + selSpan;
-          html += '<td class="free' + (isSel?' sel':'') + hl + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
+          html += '<td class="free' + hl + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
         }
       });
       html += '<td class="time' + hl + '">' + lbl + '</td></tr>';
@@ -422,7 +439,7 @@ function render() {
     var canBook = bookable.length > 0 && hasPhone && !b.creating;
     html += '<div class="confirm"><div class="confirm-title">Подтверждение записи</div><div class="confirm-grid">';
     html += '<div class="k">Клиент</div><div class="v">' + escapeHtml(state.clientName) + (hasPhone?' · '+escapeHtml(formatPhone(state.clientPhone)):' · <span style="color:var(--error)">нет телефона</span>') + '</div>';
-    html += '<div class="k">Услуги</div><div class="v">' + (bookable.length?escapeHtml(bookable.map(function(r){return r.name;}).join(', ')):'<span style="color:var(--error)">не отмечены</span>') + '</div>';
+    html += '<div class="k">Услуги</div><div class="v">' + (bookable.length ? bookable.map(function(r){return '• '+escapeHtml(r.name);}).join('<br>') : '<span style="color:var(--error)">не отмечены</span>') + '</div>';
     html += '<div class="k">Врач</div><div class="v">' + escapeHtml(bkStaffName(b.selected.staffId)) + '</div>';
     html += '<div class="k">Дата и время</div><div class="v">' + bkDdmm(b.date) + ', ' + bkSlotTime(b.selected.slot) + (bkTotalDur() ? ' – ' + bkEndTime(b.selected.slot, bkTotalDur()) : '') + '</div>';
     html += '<div class="k">Длительность</div><div class="v">' + (bkTotalDur()?bkDur(bkTotalDur()):'—') + '</div>';
