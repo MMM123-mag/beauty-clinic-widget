@@ -84,10 +84,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .bk-filter{margin-left:auto;display:flex;align-items:center;gap:8px}
 .bk-filter select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:14px;outline:none;cursor:pointer;background:var(--card)}
 
-.grid-wrap{overflow:auto;max-height:460px}
+.grid-wrap{overflow:visible}
 table.grid{border-collapse:collapse;width:100%;table-layout:fixed}
 table.grid th,table.grid td{border:1px solid var(--border-light)}
-table.grid thead th{position:sticky;top:0;background:var(--sch-bg);z-index:2;padding:9px 6px;font-size:13px;font-weight:600;color:var(--text)}
+table.grid thead th{background:var(--sch-bg);padding:9px 6px;font-size:13px;font-weight:600;color:var(--text)}
 table.grid thead th .spec{display:block;font-weight:400;font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .col-time{width:60px}
 td.time{background:var(--sch-bg);color:var(--text-secondary);font-size:12px;text-align:center;width:60px;height:32px;vertical-align:top;padding-top:2px}
@@ -144,6 +144,7 @@ var state = {
   addedRows: [],         // услуги в лиде (товарные строки): {id, yc_id, name, price, booked}
   categories: [],        // категории услуг YC
   selectedCategoryId: null,
+  catListOpen: false,    // свёрнут ли список категорий
   search: '',            // поиск в ① для добавления
   loading: false,
   error: '',
@@ -340,21 +341,23 @@ function render() {
     found.forEach(function(s){ var p=s.price_min||s.price||0; html += '<div class="svc-additem" data-add="' + s.id + '"><span>' + escapeHtml(s.title) + '</span><span class="mt">' + bkMoney(p) + '</span><span class="svc-addplus">+ добавить</span></div>'; });
     html += '</div>';
   } else if (q.length === 1) {
-    html += '<div class="hint">Введите минимум 2 буквы или выбери категорию ниже</div>';
-  } else if (state.selectedCategoryId === null) {
-    // список категорий (как в YC)
-    html += '<div style="margin:10px 0 4px;font-size:12px;color:var(--text-muted)">Все категории услуг:</div><div class="svc-addres">';
-    state.categories.forEach(function(c){ html += '<div class="svc-additem" data-cat="' + c.id + '"><span>' + escapeHtml(c.title) + '</span><span class="mt">' + c.count + ' услуг</span><span class="svc-addplus">›</span></div>'; });
-    html += '</div>';
+    html += '<div class="hint">Введите минимум 2 буквы или открой категории ниже</div>';
   } else {
-    // услуги внутри выбранной категории
-    var cat = state.categories.find(function(c){return c.id===state.selectedCategoryId;});
-    var catSvc = state.services.filter(function(s){ return s.category_id===state.selectedCategoryId && have.indexOf(s.id)===-1; });
-    html += '<div class="svc-additem" data-cat-back="1" style="margin-top:8px;background:var(--svc-bg);font-weight:600;border-radius:var(--radius-sm)"><span>‹ Все категории</span><span class="mt">' + escapeHtml(cat?cat.title:'') + '</span></div>';
-    html += '<div class="svc-addres">';
-    if (!catSvc.length) html += '<div class="svc-additem" style="color:var(--text-muted)">Все услуги категории уже добавлены</div>';
-    catSvc.forEach(function(s){ var p=s.price_min||s.price||0; html += '<div class="svc-additem" data-add="' + s.id + '"><span>' + escapeHtml(s.title) + '</span><span class="mt">' + bkMoney(p) + '</span><span class="svc-addplus">+ добавить</span></div>'; });
-    html += '</div>';
+    // сворачиваемый список категорий (как «Все услуги» в YC)
+    html += '<div data-catlist-toggle style="margin-top:8px;padding:9px 12px;background:var(--svc-bg);border-radius:var(--radius-sm);cursor:pointer;font-weight:600;color:var(--svc-text);display:flex;justify-content:space-between;align-items:center"><span>Все категории услуг</span><span>' + (state.catListOpen?'▾':'▸') + '</span></div>';
+    if (state.catListOpen && state.selectedCategoryId === null) {
+      html += '<div class="svc-addres">';
+      state.categories.forEach(function(c){ html += '<div class="svc-additem" data-cat="' + c.id + '"><span>' + escapeHtml(c.title) + '</span><span class="mt">' + c.count + ' услуг</span><span class="svc-addplus">›</span></div>'; });
+      html += '</div>';
+    } else if (state.catListOpen) {
+      var cat = state.categories.find(function(c){return c.id===state.selectedCategoryId;});
+      var catSvc = state.services.filter(function(s){ return s.category_id===state.selectedCategoryId && have.indexOf(s.id)===-1; });
+      html += '<div class="svc-additem" data-cat-back="1" style="margin-top:6px;background:var(--svc-bg);font-weight:600;border-radius:var(--radius-sm)"><span>‹ Все категории</span><span class="mt">' + escapeHtml(cat?cat.title:'') + '</span></div>';
+      html += '<div class="svc-addres">';
+      if (!catSvc.length) html += '<div class="svc-additem" style="color:var(--text-muted)">Все услуги категории уже добавлены</div>';
+      catSvc.forEach(function(s){ var p=s.price_min||s.price||0; html += '<div class="svc-additem" data-add="' + s.id + '"><span>' + escapeHtml(s.title) + '</span><span class="mt">' + bkMoney(p) + '</span><span class="svc-addplus">+ добавить</span></div>'; });
+      html += '</div>';
+    }
   }
   html += '</div>';
   html += '<div class="svc-sum">На запись: <b>' + bookedRows.length + '</b> · Длительность: <b>' + (bkTotalDur()?bkDur(bkTotalDur()):'—') + '</b> · Сумма: <b>' + bkMoney(bkTotalPrice()) + '</b></div>';
@@ -445,6 +448,8 @@ function bindAll() {
     });
   });
 
+  var clt = document.querySelector('[data-catlist-toggle]');
+  if (clt) clt.addEventListener('click', function(){ state.catListOpen = !state.catListOpen; if (!state.catListOpen) state.selectedCategoryId = null; render(); });
   document.querySelectorAll('[data-cat]').forEach(function(el){
     el.addEventListener('click', function(){ state.selectedCategoryId = parseInt(el.getAttribute('data-cat'),10); render(); });
   });
