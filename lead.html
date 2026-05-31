@@ -85,6 +85,8 @@ body{font-family:'Rubik',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 .bk-nav{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;cursor:pointer;font-size:14px;font-weight:500}
 .bk-nav:hover{border-color:var(--sch-accent);color:var(--sch-text)}
 .bk-date{font-weight:600;font-size:15px;min-width:170px;text-align:center}
+.bk-datepick{border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 8px;font-size:13px;font-family:'Rubik',sans-serif;cursor:pointer;color:var(--sch-text);background:var(--card)}
+.bk-datepick:hover{border-color:var(--sch-accent)}
 .bk-filter{margin-left:auto;display:flex;align-items:center;gap:8px}
 .bk-filter select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:14px;outline:none;cursor:pointer;background:var(--card)}
 
@@ -377,6 +379,7 @@ function render() {
   html += '<div class="acc-body">';
   html += '<div class="bk-toolbar"><button class="bk-nav" data-bk-nav="today">Сегодня</button><button class="bk-nav" data-bk-nav="-1">‹</button>';
   html += '<div class="bk-date">' + bkDdmm(b.date) + ', ' + bkWeekday(b.date) + '</div><button class="bk-nav" data-bk-nav="1">›</button>';
+  html += '<input type="date" id="bk-datepick" class="bk-datepick" value="' + b.date + '" title="Выбрать дату из календаря">';
   html += '<div class="bk-filter"><span style="color:var(--text-secondary);font-size:13px">Врач:</span><select id="bk-staff-sel"><option value="">Все врачи</option>';
   state.bk.staff.forEach(function(s){ html += '<option value="' + s.id + '" ' + (b.filterStaff===s.id?'selected':'') + '>' + escapeHtml(s.name) + '</option>'; });
   html += '</select></div></div>';
@@ -493,6 +496,15 @@ function bindAll() {
       render();
       loadDayRecords().then(render).catch(function(e){ state.bk.recordsError=e.message; render(); });
     });
+  });
+
+  var dp = document.getElementById('bk-datepick');
+  if (dp) dp.addEventListener('change', function(){
+    if (!dp.value) return;
+    state.bk.date = dp.value;
+    state.bk.selected = null;
+    render();
+    loadDayRecords().then(render).catch(function(e){ state.bk.recordsError=e.message; render(); });
   });
 
   var ss = document.getElementById('bk-staff-sel');
