@@ -142,6 +142,8 @@ var state = {
   clientPhone: '',
   services: [],          // каталог YC
   addedRows: [],         // услуги в лиде (товарные строки): {id, yc_id, name, price, booked}
+  categories: [],        // категории услуг YC
+  selectedCategoryId: null,
   search: '',            // поиск в ① для добавления
   loading: false,
   error: '',
@@ -149,7 +151,7 @@ var state = {
     staff: [], staffLoaded: false,
     date: '', records: [], recordsError: '',
     filterStaff: null, selected: null,
-    openServices: true, openSchedule: true,
+    openServices: false, openSchedule: false,
     creating: false, createdMsg: ''
   }
 };
@@ -211,6 +213,15 @@ async function loadData() {
   var ycServ = await ycRequest('company/' + state.companyId + '/services');
   state.services = (ycServ.data || []).filter(function(s){ return s.active !== false; })
     .sort(function(a,b){ return (a.title||'').localeCompare(b.title||'', 'ru'); });
+
+  // Категории услуг (для выбора как в YC — браузинг по категориям)
+  var ycCat = await ycRequest('service_categories/' + state.companyId);
+  var cats = (ycCat.data || []).filter(function(c){ return c.id !== 1; });
+  var counts = {};
+  state.services.forEach(function(s){ counts[s.category_id] = (counts[s.category_id]||0)+1; });
+  state.categories = cats.map(function(c){ return { id: c.id, title: c.title, count: counts[c.id]||0 }; })
+    .filter(function(c){ return c.count>0; })
+    .sort(function(a,b){ return a.title.localeCompare(b.title,'ru'); });
 
   var rows = await bx24Call('crm.lead.productrows.get', { id: state.leadId });
   state.addedRows = (rows || []).map(function(r) {
@@ -297,13 +308,7 @@ function render() {
   var hasPhone = !!(state.clientPhone || '').replace(/\D/g,'');
   var html = '';
 
-  // client
-  html += '<div class="client-card"><div class="client-info">';
-  html += '<div class="client-name">' + escapeHtml(state.clientName) + '</div>';
-  if (hasPhone) html += '<div class="client-meta">' + escapeHtml(formatPhone(state.clientPhone)) + ' · контакт из лида</div>';
-  else html += '<div class="client-meta warn">⚠ нет телефона — добавь в контакт лида, иначе запись не создать</div>';
-  html += '</div><div class="client-badge">' + escapeHtml(state.branchName) + '</div></div>';
-
+  if (!hasPhone) html += '<div class="error-banner">⚠ У клиента нет телефона — добавь в контакт лида, иначе запись не создать.</div>';
   if (state.error) html += '<div class="error-banner">⚠ ' + escapeHtml(state.error) + '</div>';
   if (b.createdMsg) html += '<div class="ok-banner">✅ ' + escapeHtml(b.createdMsg) + '<div style="font-weight:400;font-size:12px;margin-top:4px">Запись ушла в YC с контактом клиента. Сделка появится автоматически.</div></div>';
 
@@ -324,16 +329,33 @@ function render() {
     html += '<span class="pr">' + bkMoney(r.price||0) + '</span>';
     html += '<button class="rm" data-remove="' + idx + '" title="Убрать">×</button></div>';
   });
-  html += '<div class="svc-addbox"><input type="text" class="svc-addin" id="svc-search" placeholder="+ Добавить услугу: поиск по названию..." value="' + escapeHtml(state.search) + '">';
+  html += '<div class="svc-addbox"><input type="text" class="svc-addin" id="svc-search" placeholder="Поиск услуги по названию (или выбери категорию ниже)..." value="' + escapeHtml(state.search) + '">';
   var q = state.search.toLowerCase().trim();
+  var have = state.addedRows.map(function(r){return r.yc_id;});
   if (q.length >= 2) {
-    var have = state.addedRows.map(function(r){return r.yc_id;});
-    var found = state.services.filter(function(s){ return (s.title||'').toLowerCase().indexOf(q)>-1 && have.indexOf(s.id)===-1; }).slice(0,8);
+    // режим поиска по всем услугам
+    var found = state.services.filter(function(s){ return (s.title||'').toLowerCase().indexOf(q)>-1 && have.indexOf(s.id)===-1; }).slice(0,30);
     html += '<div class="svc-addres">';
     if (!found.length) html += '<div class="svc-additem" style="color:var(--text-muted)">Ничего не найдено</div>';
     found.forEach(function(s){ var p=s.price_min||s.price||0; html += '<div class="svc-additem" data-add="' + s.id + '"><span>' + escapeHtml(s.title) + '</span><span class="mt">' + bkMoney(p) + '</span><span class="svc-addplus">+ добавить</span></div>'; });
     html += '</div>';
-  } else if (q.length === 1) { html += '<div class="hint">Введите минимум 2 буквы</div>'; }
+  } else if (q.length === 1) {
+    html += '<div class="hint">Введите минимум 2 буквы или выбери категорию ниже</div>';
+  } else if (state.selectedCategoryId === null) {
+    // список категорий (как в YC)
+    html += '<div style="margin:10px 0 4px;font-size:12px;color:var(--text-muted)">Все категории услуг:</div><div class="svc-addres">';
+    state.categories.forEach(function(c){ html += '<div class="svc-additem" data-cat="' + c.id + '"><span>' + escapeHtml(c.title) + '</span><span class="mt">' + c.count + ' услуг</span><span class="svc-addplus">›</span></div>'; });
+    html += '</div>';
+  } else {
+    // услуги внутри выбранной категории
+    var cat = state.categories.find(function(c){return c.id===state.selectedCategoryId;});
+    var catSvc = state.services.filter(function(s){ return s.category_id===state.selectedCategoryId && have.indexOf(s.id)===-1; });
+    html += '<div class="svc-additem" data-cat-back="1" style="margin-top:8px;background:var(--svc-bg);font-weight:600;border-radius:var(--radius-sm)"><span>‹ Все категории</span><span class="mt">' + escapeHtml(cat?cat.title:'') + '</span></div>';
+    html += '<div class="svc-addres">';
+    if (!catSvc.length) html += '<div class="svc-additem" style="color:var(--text-muted)">Все услуги категории уже добавлены</div>';
+    catSvc.forEach(function(s){ var p=s.price_min||s.price||0; html += '<div class="svc-additem" data-add="' + s.id + '"><span>' + escapeHtml(s.title) + '</span><span class="mt">' + bkMoney(p) + '</span><span class="svc-addplus">+ добавить</span></div>'; });
+    html += '</div>';
+  }
   html += '</div>';
   html += '<div class="svc-sum">На запись: <b>' + bookedRows.length + '</b> · Длительность: <b>' + (bkTotalDur()?bkDur(bkTotalDur()):'—') + '</b> · Сумма: <b>' + bkMoney(bkTotalPrice()) + '</b></div>';
   html += '</div></div>';
@@ -422,6 +444,12 @@ function bindAll() {
       saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
     });
   });
+
+  document.querySelectorAll('[data-cat]').forEach(function(el){
+    el.addEventListener('click', function(){ state.selectedCategoryId = parseInt(el.getAttribute('data-cat'),10); render(); });
+  });
+  var catBack = document.querySelector('[data-cat-back]');
+  if (catBack) catBack.addEventListener('click', function(){ state.selectedCategoryId = null; render(); });
 
   document.querySelectorAll('[data-remove]').forEach(function(btn){
     btn.addEventListener('click', function(){
