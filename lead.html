@@ -499,13 +499,17 @@ function bindAll() {
   });
 
   var dp = document.getElementById('bk-datepick');
-  if (dp) dp.addEventListener('change', function(){
-    if (!dp.value) return;
-    state.bk.date = dp.value;
-    state.bk.selected = null;
-    render();
-    loadDayRecords().then(render).catch(function(e){ state.bk.recordsError=e.message; render(); });
-  });
+  if (dp) {
+    // клик по всему полю открывает календарь (иконка слишком мелкая)
+    dp.addEventListener('click', function(){ try { dp.showPicker(); } catch(e){} });
+    dp.addEventListener('change', function(){
+      if (!dp.value) return;
+      state.bk.date = dp.value;
+      state.bk.selected = null;
+      render();
+      loadDayRecords().then(render).catch(function(e){ state.bk.recordsError=e.message; render(); });
+    });
+  }
 
   var ss = document.getElementById('bk-staff-sel');
   if (ss) ss.addEventListener('change', function(){ state.bk.filterStaff = ss.value?parseInt(ss.value,10):null; state.bk.selected=null; render(); });
