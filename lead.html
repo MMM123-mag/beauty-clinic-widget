@@ -85,8 +85,18 @@ body{font-family:'Rubik',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 .bk-nav{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;cursor:pointer;font-size:14px;font-weight:500}
 .bk-nav:hover{border-color:var(--sch-accent);color:var(--sch-text)}
 .bk-date{font-weight:600;font-size:15px;min-width:170px;text-align:center}
-.bk-datepick{border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 8px;font-size:13px;font-family:'Rubik',sans-serif;cursor:pointer;color:var(--sch-text);background:var(--card)}
-.bk-datepick:hover{border-color:var(--sch-accent)}
+.bk-datebtn{font-weight:600;font-size:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;cursor:pointer;min-width:200px;text-align:center;font-family:'Rubik',sans-serif;color:var(--sch-text)}
+.bk-datebtn:hover{border-color:var(--sch-accent)}
+.bk-cal{margin:0 16px 12px;border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:var(--card);max-width:300px;box-shadow:var(--shadow)}
+.bk-cal-head{display:flex;align-items:center;justify-content:space-between;font-weight:600;margin-bottom:8px}
+.bk-cal-nav{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px 11px;cursor:pointer;font-size:14px}
+.bk-cal-nav:hover{border-color:var(--sch-accent);color:var(--sch-text)}
+.bk-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.bk-cal-dow{font-size:11px;color:var(--text-muted);padding:4px 0}
+.bk-cal-day{padding:7px 0;border-radius:var(--radius-sm);cursor:pointer;font-size:13px}
+.bk-cal-day:hover{background:var(--sch-bg)}
+.bk-cal-day.today{outline:1px solid var(--sch-accent);outline-offset:-1px}
+.bk-cal-day.sel{background:var(--sch-accent);color:#fff;font-weight:600}
 .bk-filter{margin-left:auto;display:flex;align-items:center;gap:8px}
 .bk-filter select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:14px;outline:none;cursor:pointer;background:var(--card)}
 
@@ -162,6 +172,7 @@ var state = {
     staff: [], staffLoaded: false,
     date: '', records: [], recordsError: '',
     filterStaff: null, selected: null,
+    calOpen: false, calMonth: '',
     openServices: false, openSchedule: false,
     creating: false, createdMsg: ''
   }
@@ -282,6 +293,25 @@ function bkDur(sec){ var h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); var 
 function bkDdmm(s){ var mn=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']; var d=new Date(s+'T12:00:00'); return d.getDate()+' '+mn[d.getMonth()]; }
 function bkWeekday(s){ var w=['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота']; return w[new Date(s+'T12:00:00').getDay()]; }
 function bkShift(s,days){ var d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+days); return d.getFullYear()+'-'+bkPad(d.getMonth()+1)+'-'+bkPad(d.getDate()); }
+function bkShiftMonth(m,delta){ var y=+m.substr(0,4), mo=+m.substr(5,2)-1+delta; var d=new Date(y,mo,1); return d.getFullYear()+'-'+bkPad(d.getMonth()+1); }
+function bkCalHtml(){
+  var m = state.bk.calMonth || state.bk.date.substr(0,7);
+  var y=+m.substr(0,4), mo=+m.substr(5,2);
+  var startDow=(new Date(y,mo-1,1).getDay()+6)%7;   // Пн=0
+  var daysIn=new Date(y,mo,0).getDate();
+  var mn=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var today=bkTodayStr();
+  var h='<div class="bk-cal"><div class="bk-cal-head"><button class="bk-cal-nav" data-cal-mon="-1">‹</button><span>'+mn[mo-1]+' '+y+'</span><button class="bk-cal-nav" data-cal-mon="1">›</button></div><div class="bk-cal-grid">';
+  ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(function(d){ h+='<div class="bk-cal-dow">'+d+'</div>'; });
+  for(var i=0;i<startDow;i++) h+='<div></div>';
+  for(var d=1; d<=daysIn; d++){
+    var ds=y+'-'+bkPad(mo)+'-'+bkPad(d);
+    var cls='bk-cal-day'+(ds===state.bk.date?' sel':'')+(ds===today?' today':'');
+    h+='<div class="'+cls+'" data-cal-day="'+ds+'">'+d+'</div>';
+  }
+  h+='</div></div>';
+  return h;
+}
 function bkStaffName(id){ var s=state.bk.staff.find(function(x){return x.id===id;}); return s?s.name:''; }
 function bkBookedRows(){ return state.addedRows.filter(function(r){ return r.booked; }); }
 function bkBookable(){ return state.addedRows.filter(function(r){ return r.booked && r.yc_id; }); }
@@ -380,11 +410,12 @@ function render() {
   html += '<span class="sub">' + bkDdmm(b.date) + ', ' + bkWeekday(b.date) + (b.filterStaff?' · '+escapeHtml(bkStaffName(b.filterStaff)):'') + '</span><span class="chev">▶</span></div>';
   html += '<div class="acc-body">';
   html += '<div class="bk-toolbar"><button class="bk-nav" data-bk-nav="today">Сегодня</button><button class="bk-nav" data-bk-nav="-1">‹</button>';
-  html += '<div class="bk-date">' + bkDdmm(b.date) + ', ' + bkWeekday(b.date) + '</div><button class="bk-nav" data-bk-nav="1">›</button>';
-  html += '<input type="date" id="bk-datepick" class="bk-datepick" value="' + b.date + '" title="Выбрать дату из календаря">';
+  html += '<button class="bk-datebtn" id="bk-datebtn">📅 ' + bkDdmm(b.date) + ', ' + bkWeekday(b.date) + '</button><button class="bk-nav" data-bk-nav="1">›</button>';
   html += '<div class="bk-filter"><span style="color:var(--text-secondary);font-size:13px">Врач:</span><select id="bk-staff-sel"><option value="">Все врачи</option>';
   state.bk.staff.forEach(function(s){ html += '<option value="' + s.id + '" ' + (b.filterStaff===s.id?'selected':'') + '>' + escapeHtml(s.name) + '</option>'; });
   html += '</select></div></div>';
+
+  if (b.calOpen) html += bkCalHtml();
 
   if (b.recordsError) {
     html += '<div class="grid-msg" style="color:var(--error)">⚠ ' + escapeHtml(b.recordsError) + '</div>';
@@ -515,18 +546,24 @@ function bindAll() {
     });
   });
 
-  var dp = document.getElementById('bk-datepick');
-  if (dp) {
-    // клик по всему полю открывает календарь (иконка слишком мелкая)
-    dp.addEventListener('click', function(){ try { dp.showPicker(); } catch(e){} });
-    dp.addEventListener('change', function(){
-      if (!dp.value) return;
-      state.bk.date = dp.value;
+  var dbtn = document.getElementById('bk-datebtn');
+  if (dbtn) dbtn.addEventListener('click', function(){
+    state.bk.calOpen = !state.bk.calOpen;
+    if (state.bk.calOpen) state.bk.calMonth = state.bk.date.substr(0,7);
+    render();
+  });
+  document.querySelectorAll('[data-cal-mon]').forEach(function(btn){
+    btn.addEventListener('click', function(){ state.bk.calMonth = bkShiftMonth(state.bk.calMonth || state.bk.date.substr(0,7), parseInt(btn.getAttribute('data-cal-mon'),10)); render(); });
+  });
+  document.querySelectorAll('[data-cal-day]').forEach(function(el){
+    el.addEventListener('click', function(){
+      state.bk.date = el.getAttribute('data-cal-day');
+      state.bk.calOpen = false;
       state.bk.selected = null;
       render();
       loadDayRecords().then(render).catch(function(e){ state.bk.recordsError=e.message; render(); });
     });
-  }
+  });
 
   var ss = document.getElementById('bk-staff-sel');
   if (ss) ss.addEventListener('change', function(){ state.bk.filterStaff = ss.value?parseInt(ss.value,10):null; state.bk.selected=null; render(); });
