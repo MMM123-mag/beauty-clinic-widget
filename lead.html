@@ -504,8 +504,8 @@ function bindAll() {
       var svc = state.services.find(function(s){return s.id===id;});
       if (!svc) return;
       state.addedRows.push({ yc_id: svc.id, name: svc.title, price: svc.price_min||svc.price||0, booked: false });
-      state.search = '';
       render();
+      var sx = document.getElementById('svc-search'); if (sx) { sx.focus(); sx.setSelectionRange(sx.value.length, sx.value.length); }
       saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
     });
   });
