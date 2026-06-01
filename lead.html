@@ -496,6 +496,7 @@ function render() {
       var hl = (mins % 60 === 0) ? ' hourline' : '';
       html += '<tr><td class="time' + hl + '">' + lbl + '</td>';
       staff.forEach(function(s){
+        if (r === BK_SLOTS - 1) { html += '<td></td>'; return; }   // нижняя граница 21:00 — линия закрытия, не слот
         var cell = maps[s.id][r];
         if (cell && cell.type === 'cont') return;
         if (s.id === selStaff && r === selStart) {
