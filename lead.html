@@ -535,9 +535,12 @@ function render() {
     html += '</div>';
   }
 
+  var __gw = document.querySelector('.grid-wrap');     // запомнить прокрутку расписания
+  var __sc = __gw ? __gw.scrollTop : null;
   document.getElementById('app').innerHTML = html;
   autoResize();
   bindAll();
+  if (__sc !== null) { var __gw2 = document.querySelector('.grid-wrap'); if (__gw2) __gw2.scrollTop = __sc; }  // вернуть на место
 }
 
 function bindAll() {
