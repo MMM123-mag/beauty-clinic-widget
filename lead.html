@@ -120,7 +120,10 @@ td.off{height:22px;background:repeating-linear-gradient(45deg,#f1f1f4,#f1f1f4 6p
 td.sel-block{background:var(--primary);color:#fff;font-size:11px;line-height:1.4;padding:5px 8px;vertical-align:top;border-color:var(--primary)}
 td.sel-block .b-time{font-weight:700;margin-bottom:3px}
 td.sel-block .sel-svc{font-size:11px;opacity:.95}
-td.busy{background:var(--busy);border-color:var(--busy-border);color:var(--busy-text);font-size:11px;line-height:1.3;padding:4px 6px;vertical-align:top}
+td.busy{background:var(--busy);border-color:var(--busy-border);color:var(--busy-text);font-size:11px;line-height:1.3;padding:0;vertical-align:top}
+td.busy .busy-a{display:block;height:100%;color:inherit;text-decoration:none;padding:4px 6px}
+td.busy .busy-a:hover{filter:brightness(.96)}
+.b-open{display:block;font-size:9px;color:#047857;margin-top:3px;opacity:.9;white-space:nowrap}
 td.busy .b-time{font-weight:600}
 td.busy .b-client{font-weight:600}
 td.busy .b-svc{color:#047857;font-size:10px;display:block;overflow:hidden}
@@ -339,6 +342,7 @@ function bkCalHtml(){
   return h;
 }
 function bkStaffName(id){ var s=state.bk.staff.find(function(x){return x.id===id;}); return s?s.name:''; }
+function bkYcDayUrl(){ return 'https://yclients.com/timetable/' + state.companyId + '#main_date=' + state.bk.date + '&mode=1'; }
 function bkBookedRows(){ return state.addedRows.filter(function(r){ return r.booked; }); }
 function bkBookable(){ return state.addedRows.filter(function(r){ return r.booked && r.yc_id; }); }
 function bkTotalDur(){ return bkBookable().reduce(function(a,r){ return a+serviceDuration(r.yc_id)*(r.qty||1); }, 0); }
@@ -491,7 +495,7 @@ function render() {
         if (s.id === selStaff && r > selStart && r < selStart + selEff) return;
         if (cell && cell.type === 'start') {
           var rec = cell.rec;
-          html += '<td class="busy' + hl + '" rowspan="' + cell.span + '"><div class="b-time">' + rec.datetime.substr(11,5) + '</div><div class="b-client">' + escapeHtml(rec.client||'Занято') + '</div><span class="b-svc">' + escapeHtml(rec.services.join(', ')) + '</span></td>';
+          html += '<td class="busy' + hl + '" rowspan="' + cell.span + '"><a class="busy-a" href="' + bkYcDayUrl() + '" target="_blank" rel="noopener" title="Открыть этот день в YC (откроется день записи — так устроен YC)"><div class="b-time">' + rec.datetime.substr(11,5) + '</div><div class="b-client">' + escapeHtml(rec.client||'Занято') + '</div><span class="b-svc">' + escapeHtml(rec.services.join(', ')) + '</span><span class="b-open">↗ открыть в YC</span></a></td>';
         } else {
           html += '<td class="free' + hl + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
         }
