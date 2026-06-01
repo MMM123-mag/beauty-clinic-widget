@@ -353,17 +353,6 @@ function bkInShift(staffId, slotIdx){
   var mins = BK_START_MIN + slotIdx*BK_STEP;
   return d.slots.some(function(iv){ return mins >= bkHmToMin(iv.from) && mins < bkHmToMin(iv.to); });
 }
-// Слот можно выбрать только если ВСЯ длительность выбранных услуг помещается в смену и не пересекает занятость.
-function bkSlotBookable(staffId, slotIdx, busyMap){
-  var span = Math.max(1, Math.ceil(bkTotalDur()/(BK_STEP*60)));
-  for (var k=0; k<span; k++){
-    var idx = slotIdx + k;
-    if (idx >= BK_SLOTS) return false;
-    if (!bkInShift(staffId, idx)) return false;
-    if (busyMap[idx]) return false;
-  }
-  return true;
-}
 function bkWorkingStaff(){
   var sc = state.bk.schedules || {};
   return state.bk.staff.filter(function(s){ var d=sc[s.id]; return d ? d.is_working : true; });
@@ -513,10 +502,10 @@ function render() {
         if (cell && cell.type === 'start') {
           var rec = cell.rec;
           html += '<td class="busy' + hl + '" rowspan="' + cell.span + '"><div class="b-time">' + rec.datetime.substr(11,5) + '</div><div class="b-client">' + escapeHtml(rec.client||'Занято') + '</div><span class="b-svc">' + escapeHtml(rec.services.join(', ')) + '</span></td>';
-        } else if (bkInShift(s.id, r) && bkSlotBookable(s.id, r, maps[s.id])) {
+        } else if (bkInShift(s.id, r)) {
           html += '<td class="free' + hl + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
         } else {
-          html += '<td class="off' + hl + '"></td>';   // вне смены или не влезает длительность
+          html += '<td class="off' + hl + '"></td>';   // только вне смены
         }
       });
       html += '<td class="time' + hl + '">' + lbl + '</td></tr>';
