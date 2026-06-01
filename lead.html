@@ -128,7 +128,7 @@ td.busy .b-time{font-weight:600}
 td.busy .b-client{font-weight:600}
 td.busy .b-svc{color:#047857;font-size:10px;display:block;overflow:hidden}
 .grid-msg{padding:24px 16px;text-align:center;color:var(--text-muted);font-size:13px}
-.deal-link{display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:12px 16px;background:#eef6ff;border:1px solid #b9dcff;border-radius:var(--radius-sm);color:#0b62c4;font-size:14px;cursor:pointer;transition:background .12s}
+.deal-link{display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:12px 16px;background:#eef6ff;border:1px solid #b9dcff;border-radius:var(--radius-sm);color:#0b62c4;font-size:14px;cursor:pointer;transition:background .12s;text-decoration:none}
 .deal-link:hover{background:#dcecff}
 .deal-link .deal-arrow{margin-left:auto;font-size:18px;font-weight:700}
 
@@ -423,7 +423,11 @@ function render() {
   if (!hasPhone) html += '<div class="error-banner">⚠ У клиента нет телефона — добавь в контакт лида, иначе запись не создать.</div>';
   if (state.error) html += '<div class="error-banner">⚠ ' + escapeHtml(state.error) + '</div>';
   if (b.createdMsg) html += '<div class="ok-banner">✅ ' + escapeHtml(b.createdMsg) + '<div style="font-weight:400;font-size:12px;margin-top:4px">Запись ушла в YC с контактом клиента. Сделка появится автоматически.</div></div>';
-  if (state.deal) html += '<div class="deal-link" id="open-deal" title="Открыть сделку в Битрикс24">📂 Открыть сделку: <b>' + escapeHtml(state.deal.title) + '</b> <span class="deal-arrow">→</span></div>';
+  if (state.deal) {
+    var _durl = '/crm/deal/details/' + state.deal.id + '/';
+    try { _durl = 'https://' + BX24.getDomain() + _durl; } catch(e){}
+    html += '<a class="deal-link" href="' + _durl + '" target="_blank" rel="noopener" title="Открыть сделку в отдельной вкладке">📂 Открыть сделку: <b>' + escapeHtml(state.deal.title) + '</b> <span class="deal-arrow">↗</span></a>';
+  }
 
   // ① услуги
   var selNames = bookedRows.length ? bookedRows.map(function(r){return r.name;}).join(', ') : 'ничего не отмечено';
@@ -574,12 +578,6 @@ function bindAll() {
       if (k==='services') state.bk.openServices=!state.bk.openServices; else state.bk.openSchedule=!state.bk.openSchedule;
       render();
     });
-  });
-
-  var od = document.getElementById('open-deal');
-  if (od) od.addEventListener('click', function(){
-    var path = '/crm/deal/details/' + state.deal.id + '/';
-    try { BX24.openPath(path); } catch(e){ window.open(path, '_blank'); }
   });
 
   var si = document.getElementById('svc-search');
