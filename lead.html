@@ -68,6 +68,12 @@ body{font-family:'Rubik',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 .svc-row .pr{font-weight:600;white-space:nowrap}
 .svc-row .rm{background:transparent;color:var(--text-muted);border:none;cursor:pointer;padding:2px 6px;font-size:16px}
 .svc-row .rm:hover{color:var(--error)}
+.svc-row .qty{display:inline-flex;align-items:center;border:1px solid var(--border-light);border-radius:8px;overflow:hidden}
+.svc-row .qty .qbtn{width:26px;height:26px;border:none;background:var(--svc-bg);color:var(--svc-text);font-size:16px;font-weight:600;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+.svc-row .qty .qbtn:hover{background:var(--svc-accent);color:#fff}
+.svc-row .qty b{min-width:28px;text-align:center;font-size:13px}
+.svc-row .pr{text-align:right}
+.svc-row .pr-unit{display:block;font-weight:400;font-size:11px;color:var(--text-muted)}
 .svc-empty{padding:18px 16px;text-align:center;color:var(--text-muted);font-size:13px;border-top:1px solid var(--border-light)}
 .svc-addbox{padding:10px 16px;border-top:1px solid var(--border-light)}
 .svc-addin{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;outline:none;font-family:'Rubik',sans-serif}
@@ -251,7 +257,7 @@ async function loadData() {
     var booked = name.indexOf('✓ ') === 0;
     var cleanName = booked ? name.slice(2) : name;
     var svc = state.services.find(function(s){ return s.title === cleanName; });
-    return { id: r.ID || null, yc_id: svc ? svc.id : null, booked: booked, name: cleanName, price: parseFloat(r.PRICE) || 0 };
+    return { id: r.ID || null, yc_id: svc ? svc.id : null, booked: booked, name: cleanName, price: parseFloat(r.PRICE) || 0, qty: Math.max(1, parseInt(r.QUANTITY, 10) || 1) };
   });
 
   state.bk.date = bkTodayStr();
@@ -277,7 +283,7 @@ async function loadDayRecords() {
 
 async function saveRows() {
   if (!state.leadId) return;
-  var rows = state.addedRows.map(function(r){ return { PRODUCT_NAME: (r.booked ? '✓ ' : '') + r.name, PRICE: r.price, QUANTITY: 1 }; });
+  var rows = state.addedRows.map(function(r){ return { PRODUCT_NAME: (r.booked ? '✓ ' : '') + r.name, PRICE: r.price, QUANTITY: r.qty || 1 }; });
   await bx24Call('crm.lead.productrows.set', { id: state.leadId, rows: rows });
 }
 
@@ -315,8 +321,8 @@ function bkCalHtml(){
 function bkStaffName(id){ var s=state.bk.staff.find(function(x){return x.id===id;}); return s?s.name:''; }
 function bkBookedRows(){ return state.addedRows.filter(function(r){ return r.booked; }); }
 function bkBookable(){ return state.addedRows.filter(function(r){ return r.booked && r.yc_id; }); }
-function bkTotalDur(){ return bkBookable().reduce(function(a,r){ return a+serviceDuration(r.yc_id); }, 0); }
-function bkTotalPrice(){ return bkBookedRows().reduce(function(a,r){ return a+(r.price||0); }, 0); }
+function bkTotalDur(){ return bkBookable().reduce(function(a,r){ return a+serviceDuration(r.yc_id)*(r.qty||1); }, 0); }
+function bkTotalPrice(){ return bkBookedRows().reduce(function(a,r){ return a+(r.price||0)*(r.qty||1); }, 0); }
 function bkVisibleStaff(){ return state.bk.filterStaff ? state.bk.staff.filter(function(s){return s.id===state.bk.filterStaff;}) : state.bk.staff; }
 function bkBusyMap(staffId){
   var map={};
@@ -364,11 +370,13 @@ function render() {
     html += '<div class="svc-empty">Услуг пока нет. Найди и добавь ниже — отмечай галочкой те, на которые записываем.</div>';
   }
   state.addedRows.forEach(function(r, idx){
+    var q = r.qty||1;
     html += '<div class="svc-row' + (r.booked?' on':'') + '">';
     html += '<input type="checkbox" class="svc-check" data-booked="' + idx + '" ' + (r.booked?'checked':'') + ' title="Записать на эту услугу">';
     html += '<span class="nm">' + escapeHtml(r.name) + (r.yc_id?'':' <span style="color:var(--error);font-size:11px">(нет в каталоге YC)</span>') + '</span>';
-    html += '<span class="mt">' + (r.yc_id?bkDur(serviceDuration(r.yc_id)):'') + '</span>';
-    html += '<span class="pr">' + bkMoney(r.price||0) + '</span>';
+    html += '<span class="mt">' + (r.yc_id?bkDur(serviceDuration(r.yc_id)*q):'') + '</span>';
+    html += '<span class="qty"><button class="qbtn" data-qty-dec="' + idx + '" title="Меньше сеансов">−</button><b>' + q + '</b><button class="qbtn" data-qty-inc="' + idx + '" title="Больше сеансов">+</button></span>';
+    html += '<span class="pr">' + bkMoney((r.price||0)*q) + (q>1?'<span class="pr-unit">'+bkMoney(r.price||0)+' × '+q+'</span>':'') + '</span>';
     html += '<button class="rm" data-remove="' + idx + '" title="Убрать">×</button></div>';
   });
   html += '<div class="svc-addbox"><input type="text" class="svc-addin" id="svc-search" placeholder="Поиск услуги по названию (или выбери категорию ниже)..." value="' + escapeHtml(state.search) + '">';
@@ -434,7 +442,7 @@ function render() {
       for (var sk = 1; sk < selSpan && selStart + sk < BK_SLOTS; sk++) { if (sbm[selStart + sk]) { selEff = sk; break; } }
       if (selStart + selEff > BK_SLOTS) selEff = BK_SLOTS - selStart;
     }
-    var selListHtml = bkBookedRows().map(function(x){ return '• ' + escapeHtml(x.name); }).join('<br>');
+    var selListHtml = bkBookedRows().map(function(x){ return '• ' + escapeHtml(x.name) + ((x.qty||1)>1 ? ' ×'+(x.qty||1) : ''); }).join('<br>');
 
     html += '<div class="grid-wrap"><table class="grid"><thead><tr><th class="col-time"></th>';
     staff.forEach(function(s){ html += '<th>' + escapeHtml(s.name) + '<span class="spec">' + escapeHtml(s.spec) + '</span></th>'; });
@@ -470,7 +478,7 @@ function render() {
     var canBook = bookable.length > 0 && hasPhone && !b.creating;
     html += '<div class="confirm"><div class="confirm-title">Подтверждение записи</div><div class="confirm-grid">';
     html += '<div class="k">Клиент</div><div class="v">' + escapeHtml(state.clientName) + (hasPhone?' · '+escapeHtml(formatPhone(state.clientPhone)):' · <span style="color:var(--error)">нет телефона</span>') + '</div>';
-    html += '<div class="k">Услуги</div><div class="v">' + (bookable.length ? bookable.map(function(r){return '• '+escapeHtml(r.name);}).join('<br>') : '<span style="color:var(--error)">не отмечены</span>') + '</div>';
+    html += '<div class="k">Услуги</div><div class="v">' + (bookable.length ? bookable.map(function(r){return '• '+escapeHtml(r.name)+((r.qty||1)>1?' ×'+(r.qty||1):'');}).join('<br>') : '<span style="color:var(--error)">не отмечены</span>') + '</div>';
     html += '<div class="k">Врач</div><div class="v">' + escapeHtml(bkStaffName(b.selected.staffId)) + '</div>';
     html += '<div class="k">Дата и время</div><div class="v">' + bkDdmm(b.date) + ', ' + bkSlotTime(b.selected.slot) + (bkTotalDur() ? ' – ' + bkEndTime(b.selected.slot, bkTotalDur()) : '') + '</div>';
     html += '<div class="k">Длительность</div><div class="v">' + (bkTotalDur()?bkDur(bkTotalDur()):'—') + '</div>';
@@ -503,7 +511,7 @@ function bindAll() {
       var id = parseInt(el.getAttribute('data-add'), 10);
       var svc = state.services.find(function(s){return s.id===id;});
       if (!svc) return;
-      state.addedRows.push({ yc_id: svc.id, name: svc.title, price: svc.price_min||svc.price||0, booked: false });
+      state.addedRows.push({ yc_id: svc.id, name: svc.title, price: svc.price_min||svc.price||0, booked: false, qty: 1 });
       render();
       var sx = document.getElementById('svc-search'); if (sx) { sx.focus(); sx.setSelectionRange(sx.value.length, sx.value.length); }
       saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
@@ -535,6 +543,15 @@ function bindAll() {
       saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
     });
   });
+
+  function bkChangeQty(idx, delta){
+    var r = state.addedRows[idx]; if (!r) return;
+    r.qty = Math.max(1, (r.qty||1) + delta);
+    render();
+    saveRows().catch(function(e){ state.error='Не сохранилось в лид: '+e.message; render(); });
+  }
+  document.querySelectorAll('[data-qty-inc]').forEach(function(b){ b.addEventListener('click', function(){ bkChangeQty(parseInt(b.getAttribute('data-qty-inc'),10), 1); }); });
+  document.querySelectorAll('[data-qty-dec]').forEach(function(b){ b.addEventListener('click', function(){ bkChangeQty(parseInt(b.getAttribute('data-qty-dec'),10), -1); }); });
 
   document.querySelectorAll('[data-bk-nav]').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -585,7 +602,7 @@ async function createBooking() {
   try {
     var body = {
       staff_id: b.selected.staffId,
-      services: bookable.map(function(r){ return { id: r.yc_id, amount: 1 }; }),
+      services: bookable.map(function(r){ return { id: r.yc_id, amount: r.qty || 1 }; }),
       client: { phone: state.clientPhone, name: state.clientName },
       datetime: b.date + 'T' + bkSlotTime(b.selected.slot) + ':00+03:00',
       seance_length: bkTotalDur() || 3600,
