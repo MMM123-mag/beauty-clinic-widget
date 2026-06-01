@@ -156,7 +156,7 @@ var FILIAL_NAMES = { 669: 'Махачкала', 671: 'Грозный' };
 var FIELD_FILIAL = 'UF_CRM_BRANCH_AUTO';
 
 var BK_START_MIN = 540;   // 9:00
-var BK_END_MIN = 1110;    // 18:30
+var BK_END_MIN = 1260;    // 21:00 — врач может задержаться сверх смены
 var BK_STEP = 15;         // шаг сетки, мин (как в YC)
 var BK_SLOTS = (BK_END_MIN - BK_START_MIN) / BK_STEP + 1;
 
@@ -343,16 +343,6 @@ function bkBookedRows(){ return state.addedRows.filter(function(r){ return r.boo
 function bkBookable(){ return state.addedRows.filter(function(r){ return r.booked && r.yc_id; }); }
 function bkTotalDur(){ return bkBookable().reduce(function(a,r){ return a+serviceDuration(r.yc_id)*(r.qty||1); }, 0); }
 function bkTotalPrice(){ return bkBookedRows().reduce(function(a,r){ return a+(r.price||0)*(r.qty||1); }, 0); }
-function bkHmToMin(hm){ return (+String(hm).substr(0,2))*60 + (+String(hm).substr(3,2)); }
-// Врач в смене в этот слот? Учитывает интервалы графика YC (вкл. перерывы — несколько интервалов).
-function bkInShift(staffId, slotIdx){
-  var d = (state.bk.schedules||{})[staffId];
-  if (!d || d.unknown) return true;     // график неизвестен/ошибка — не блокируем
-  if (!d.is_working) return false;
-  if (!d.slots.length) return true;     // в смене, но без явных часов — весь день
-  var mins = BK_START_MIN + slotIdx*BK_STEP;
-  return d.slots.some(function(iv){ return mins >= bkHmToMin(iv.from) && mins < bkHmToMin(iv.to); });
-}
 function bkWorkingStaff(){
   var sc = state.bk.schedules || {};
   return state.bk.staff.filter(function(s){ var d=sc[s.id]; return d ? d.is_working : true; });
@@ -502,10 +492,8 @@ function render() {
         if (cell && cell.type === 'start') {
           var rec = cell.rec;
           html += '<td class="busy' + hl + '" rowspan="' + cell.span + '"><div class="b-time">' + rec.datetime.substr(11,5) + '</div><div class="b-client">' + escapeHtml(rec.client||'Занято') + '</div><span class="b-svc">' + escapeHtml(rec.services.join(', ')) + '</span></td>';
-        } else if (bkInShift(s.id, r)) {
-          html += '<td class="free' + hl + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
         } else {
-          html += '<td class="off' + hl + '"></td>';   // только вне смены
+          html += '<td class="free' + hl + '" data-bk-staff="' + s.id + '" data-bk-slot="' + r + '"></td>';
         }
       });
       html += '<td class="time' + hl + '">' + lbl + '</td></tr>';
