@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<script src="//api.bitrix24.com/api/v1/"></script>
+<style>
+  body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 90vh; margin: 0; text-align: center; color: #333; }
+  #status { font-size: 16px; max-width: 480px; line-height: 1.5; }
+</style>
+<script>
+// Виджет переехал на сервер клиники: российские провайдеры сбрасывают соединение с vercel.app.
+// Эта страница один раз перепривязывает обе вкладки Битрикса на новый адрес.
+var NEW_BASE = 'https://144-124-253-45.nip.io/widget/';
+
+var PLACEMENTS = [
+  { code: 'CRM_DEAL_DETAIL_TAB', handler: NEW_BASE + 'booking.html', title: { ru: 'Запись на приём', en: 'Book appointment' } },
+  { code: 'CRM_LEAD_DETAIL_TAB', handler: NEW_BASE + 'lead.html', title: { ru: 'Интересующие услуги', en: 'Services of interest' } }
+];
+
+function setStatus(html) {
+  document.getElementById('status').innerHTML = html;
+}
+
+function rebind(i) {
+  if (i >= PLACEMENTS.length) {
+    setStatus('<b style="color:green">✓ Виджет переехал.</b><br>Закройте карточку, выключите VPN и откройте её заново.');
+    return;
+  }
+  var p = PLACEMENTS[i];
+  setStatus('Переношу вкладку «' + p.title.ru + '»...');
+  BX24.callMethod('placement.unbind', { PLACEMENT: p.code }, function() {
+    BX24.callMethod('placement.bind', {
+      PLACEMENT: p.code,
+      HANDLER: p.handler,
+      LANG_ALL: { ru: { TITLE: p.title.ru }, en: { TITLE: p.title.en } }
+    }, function(res) {
+      if (res.error()) {
+        var err = res.error();
+        setStatus('<b style="color:#c00">Ошибка на вкладке «' + p.title.ru + '»:</b><br>'
+          + (err.ex ? err.ex.error_description : JSON.stringify(err))
+          + '<br><br>Пришлите скрин Claude.');
+        return;
+      }
+      rebind(i + 1);
+    });
+  });
+}
+
+BX24.init(function() { rebind(0); });
+</script>
+</head>
+<body>
+<div id="status">Подключаюсь к Битриксу...</div>
+</body>
+</html>

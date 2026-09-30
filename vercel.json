@@ -8,12 +8,12 @@
     },
     {
       "src": "/lead(/.*)?",
-      "dest": "/api/lead.js",
+      "dest": "/api/migrate.js",
       "methods": ["GET", "POST"]
     },
     {
       "src": "/(.*)",
-      "dest": "/api/index.js",
+      "dest": "/api/migrate.js",
       "methods": ["GET", "POST"]
     }
   ],
