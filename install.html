@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <script src="//api.bitrix24.com/api/v1/"></script>
 <script>
-var HANDLER = 'https://widget-five-alpha.vercel.app';
+var HANDLER = 'https://144-124-253-45.nip.io/widget'; // виджет переехал на сервер клиники 30.09.2026
 
 function setStatus(text) {
   document.getElementById('status').textContent = text;
@@ -27,7 +27,7 @@ BX24.init(function() {
   setStatus('Настройка приложения... (шаг 1/2)');
 
   // Placement 1: запись на приём в сделке (существующий)
-  bindPlacement('CRM_DEAL_DETAIL_TAB', HANDLER, {
+  bindPlacement('CRM_DEAL_DETAIL_TAB', HANDLER + '/booking.html', {
     ru: 'Запись на приём',
     en: 'Book appointment'
   }, function(resDeal) {
@@ -41,7 +41,7 @@ BX24.init(function() {
     setStatus('Настройка приложения... (шаг 2/2)');
 
     // Placement 2: интересующие услуги в лиде (новый)
-    bindPlacement('CRM_LEAD_DETAIL_TAB', HANDLER + '/lead', {
+    bindPlacement('CRM_LEAD_DETAIL_TAB', HANDLER + '/lead.html', {
       ru: 'Интересующие услуги',
       en: 'Services of interest'
     }, function(resLead) {
